@@ -1,0 +1,10 @@
+numpy
+matplotlib
+seaborn
+pillow
+scikit-learn
+rasterio
+segment-geospatial
+groundingdino-py
+leafmap
+localtileserver
