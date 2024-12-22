@@ -19,11 +19,13 @@ class LangRS():
         self.image_path = image
         self.prompt = prompt
         # make output path dynamic with timestamps
-        self.output_path = output_path 
-        self.output_path_image = os.path.join(output_path, 'original_image.jpg')
-        self.output_path_image_boxes = os.path.join(output_path, 'results_dino.jpg')
-        self.output_path_image_masks = os.path.join(output_path, 'results_sam.jpg')
-        self.output_path_image_areas = os.path.join(output_path, 'results_areas.jpg')
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.output_path = os.path.join(output_path, timestamp)
+        os.makedirs(self.output_path, exist_ok=True)
+        self.output_path_image = os.path.join(self.output_path, 'original_image.jpg')
+        self.output_path_image_boxes = os.path.join(self.output_path, 'results_dino.jpg')
+        self.output_path_image_masks = os.path.join(self.output_path, 'results_sam.jpg')
+        self.output_path_image_areas = os.path.join(self.output_path, 'results_areas.jpg')
         self.sam = LangSAM()
 
         # Load the image a numpy array for RGB bands only
@@ -127,7 +129,3 @@ class LangRS():
             x1, y1, x2, y2 = box
             localized_boxes.append((x1 + offset_x, y1 + offset_y, x2 + offset_x, y2 + offset_y))
         return localized_boxes
-    
-
-
-
