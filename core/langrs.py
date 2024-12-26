@@ -2,20 +2,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import os
-import random
-import json
 import datetime
 from samgeo import tms_to_geotiff, split_raster
 from samgeo.text_sam import LangSAM
-from samgeo import SamGeo
 import rasterio
 from rasterio.plot import show
-import leafmap
 from rasterio.enums import Resampling
 from PIL import Image
+from .outlier_detection import *
+import torch
 
 class LangRS():
     def __init__(self, image, prompt, output_path):
+        os.makedirs(output_path, exist_ok=True)
         self.image_path = image
         self.prompt = prompt
         # make output path dynamic with timestamps
@@ -34,6 +33,7 @@ class LangRS():
             rgb_image = np.array(src.read([1, 2, 3]))
 
         self.pil_image = Image.fromarray(np.transpose(rgb_image, (1, 2, 0)))
+        self.np_image = np.array(self.pil_image)
 
     def predict(self,):
         pass
@@ -42,10 +42,10 @@ class LangRS():
         if text_prompt is None:
             text_prompt = self.prompt
 
-        self.bounding_boxes = self._run_detection_on_chunks(chunk_size=window_size,
-                                                       image=self.pil_image,
-                                                       overlap=overlap,
-                                                       text_prompt=text_prompt)
+        self.bounding_boxes = self._run_detection_on_chunks(image=self.pil_image,
+                                                            chunk_size=window_size,
+                                                            overlap=overlap,
+                                                            text_prompt=text_prompt)
         
 
         # Plotting the bounding boxes directly on the array converted to an image
@@ -63,15 +63,69 @@ class LangRS():
         ax.axis('off')
         plt.savefig(self.output_path_image_boxes)
     
+        self._area_calculator()
+
         return self.bounding_boxes
         
 
-    def predict_sam(self,):
-        pass
+    def predict_sam(self):
+        self.boxes_tensor = torch.tensor(np.array(self.y_pred_zscore))
+        self.masks_out = self.sam.predict_sam(image=self.pil_image, boxes=self.boxes_tensor)
+        self.masks = self.masks_out.squeeze(1)
 
-    def outlier_rejection(self,):
-        pass
+        mask_overlay = np.zeros_like(
+                self.np_image[..., 0], dtype=np.uint8
+            )
+        for i, (box, mask) in enumerate(zip(self.boxes_tensor, self.masks)):
+            # Convert tensor to numpy array if necessary and ensure it contains integers
+            if isinstance(mask, torch.Tensor):
+                mask = (
+                    mask.cpu().numpy().astype(np.uint8)
+                )  # If mask is on GPU, use .cpu() before .numpy()
+            mask_overlay += ((mask > 0) * (i + 1)).astype(
+                np.uint8
+            )  # Assign a unique value for each mask
 
+        # Normalize mask_overlay to be in [0, 255]
+        self.mask_overlay = (
+        mask_overlay > 0
+        ) * 255  # Binary mask in [0, 255]
+
+        # Create a plot
+        fig, ax = plt.subplots()
+
+        # Display the image
+        ax.imshow(self.np_image)
+
+        # Overlay the mask with transparency
+        ax.imshow(self.mask_overlay, cmap="viridis", alpha=0.4)
+
+        # Remove axis
+        ax.axis('off')
+
+        # Adjust the subplot parameters to give no margins
+        plt.subplots_adjust(left=0, right=0, top=0, bottom=0)
+
+        # Display the plot
+        plt.savefig(self.output_path_image_masks)
+
+    def outlier_rejection(self):
+        self.output_path_image_zscore = os.path.join(self.output_path, 'results_zscore.jpg')
+        self.output_path_image_iqr = os.path.join(self.output_path, 'results_iqr.jpg')
+        self.output_path_image_lof = os.path.join(self.output_path, 'results_lof.jpg')
+        self.output_path_image_iso = os.path.join(self.output_path, 'results_iso.jpg')
+        self.output_path_image_svm = os.path.join(self.output_path, 'results_svm.jpg')
+        self.output_path_image_svm_sgd = os.path.join(self.output_path, 'results_svm_sgd.jpg')
+        self.output_path_image_rob = os.path.join(self.output_path, 'results_rob.jpg')
+
+        self.y_pred_zscore = z_score_outliers(self.data, self.pil_image, self.bboxes, output_dir=self.output_path_image_zscore)
+        self.y_pred_iqr = iqr_outliers(self.data, self.pil_image, self.bboxes, output_dir=self.output_path_image_iqr)
+        self.y_pred_svm = svm_outliers(self.data, self.pil_image, self.bboxes, output_dir=self.output_path_image_svm)
+        self.y_pred_svm_sgd = svm_sgd_outliers(self.data, self.pil_image, self.bboxes, output_dir=self.output_path_image_svm_sgd)
+        self.y_pred_rob = rob_cov(self.data, self.pil_image, self.bboxes, output_dir=self.output_path_image_rob)
+        self.y_pred_lof = lof_outliers(self.data, self.pil_image, self.bboxes, output_dir=self.output_path_image_lof)
+        self.y_pred_iso = isolation_forest_outliers(self.data, self.pil_image, self.bboxes, output_dir=self.output_path_image_iso)
+        
     def evaluate(self,):
         pass
 
@@ -85,16 +139,16 @@ class LangRS():
         self.sorted_areas =  [area for bbox, area in self.bboxes_with_areas]
 
         self.bboxes = self.sorted_bboxes
-        self.data = np.array(self.bboxes)
+        self.data = np.array(self.sorted_areas)
         self.data = self.data.reshape(-1, 1)
         # Visualize and save the dataset
+        plt.figure()
         plt.scatter(range(len(self.data)), self.data)
         plt.xlabel('Index')
         plt.ylabel('Area (px sq.)')
         plt.grid(True)
         plt.savefig(self.output_path_image_areas)
         plt.close()
-
 
     def _run_detection_on_chunks(self, image, chunk_size=1000, overlap=300, box_threshold=0.3, text_threshold=0.75, text_prompt=""):
         # Slice image into chunks with overlap

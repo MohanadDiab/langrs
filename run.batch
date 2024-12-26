@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --mem=32G
+#SBATCH --partition=gpu-low
+#SBATCH --account=renene-object_detection
+#SBATCH --output=example-%j.out
+#SBATCH --error=example-%j.err
+#SBATCH --gres=gpu:a100_3g.40gb:1
+#SBATCH --time=3:00:00
+
+
+module load anaconda3/2023.09 
+
+eval "$(conda shell.bash hook)"
+
+conda activate /data/users/mdiab_eurac/langrs
+
+python main.py
