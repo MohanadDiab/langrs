@@ -1,26 +1,17 @@
-import json
-from langrs_old import LangRS
+from langrs.core import LangRS
 
-# Create a configuration dictionary
-config = {
-    "image_input": "path/to/your/image.tif",
-    "text_input": "white cars",
-    "tile_size": 1000,
-    "overlap": 300,
-    "tiling": False,
-    "evaluation": False,
-    "outlier_methods": ["isolation_forest"],
-    "output_dir": "output"
-}
+def main():
+  text_input = "roof"
 
-# Save the configuration to a JSON file
-with open("config.json", "w") as f:
-    json.dump(config, f, indent=4)
+  image_input = "data/roi_kala.tif"
 
-# Initialize LangRS with the configuration file
-lang_rs = LangRS("config.json")
+  langrs = LangRS(image_input, text_input, "output")
 
-# Process the image
-lang_rs.process()
+  langrs.predict_dino(window_size=600, overlap=300, box_threshold=0.25, text_threshold=0.25)
 
-print("Processing complete. Results saved in the 'output' directory.")
+  langrs.outlier_rejection()
+
+  langrs.predict_sam(rejection_method="zscore")
+
+if __name__ == "__main__":
+  main()

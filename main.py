@@ -1,4 +1,4 @@
-from core.langrs import LangRS
+from github.langrs.langrs.langrs.core import LangRS
 
 def main():
   text_input = "roof"
@@ -7,11 +7,11 @@ def main():
 
   langrs = LangRS(image_input, text_input, "output")
 
-  langrs.predict_dino(window_size=500, overlap=200)
+  langrs.predict_dino(window_size=600, overlap=300, box_threshold=0.25, text_threshold=0.25)
 
   langrs.outlier_rejection()
 
-  langrs.predict_sam()
+  langrs.predict_sam(rejection_method="zscore")
 
 if __name__ == "__main__":
   main()
