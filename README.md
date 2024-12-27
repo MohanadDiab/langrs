@@ -16,10 +16,10 @@ LangRS Segmentation is a Python package for remote sensing image segmentation. I
 
 ### Prerequisites
 
-Ensure you have Python 3.8 or higher installed. Install the required dependencies:
+Ensure you have Python 3.10 or higher installed. Install the required dependencies:
 
 ```bash
-pip install numpy matplotlib pillow rasterio torch scipy scikit-learn samgeo
+pip install -r requirements.txt
 ```
 
 ### Install LangRS Segmentation
@@ -27,8 +27,8 @@ pip install numpy matplotlib pillow rasterio torch scipy scikit-learn samgeo
 Clone the repository and install the package locally:
 
 ```bash
-git clone https://github.com/yourusername/langrs_segmentation.git
-cd langrs_segmentation
+git clone https://github.com/MohanadDiab/langrs.git
+cd langrs
 pip install .
 ```
 
@@ -39,7 +39,7 @@ pip install .
 Here is an example of how to use the `LangRS` class for remote sensing image segmentation:
 
 ```python
-from langrs_segmentation.core import LangRS
+from langrs.core import LangRS
 
 def main():
     # Specify a text prompt to identify objects in the image
