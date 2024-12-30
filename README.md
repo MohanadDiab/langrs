@@ -1,14 +1,17 @@
-[![image](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/opengeos/segment-geospatial/blob/main/docs/examples/satellite.ipynb)
+# LangRS 
 
-[![image](https://img.shields.io/pypi/v/segment-geospatial.svg)](https://colab.research.google.com/github/MohanadDiab/langrs/examples/langrs.ipynb)
+[![image](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MohanadDiab/langrs/examples/langrs.ipynb)
+[![PyPI version](https://badge.fury.io/py/langrs.svg)](https://pypi.python.org/pypi/langrs)
+
 
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/langrs_logo.png" alt="LangRS Logo" width="300"/>
 </p>
 
+** A python package that omptimizes zero-shot segmentation of aerial image based with GroundingDINO and Segment Anything Model (SAM) **
 
-# LangRS 
+# Introduction
 
 LangRS  is a Python package for remote sensing image segmentation, it is built on top of the [Segment-Geospatial](https://github.com/opengeos/segment-geospatial) package. It combines advanced techniques like bounding box detection, semantic segmentation, and outlier rejection to deliver precise and reliable segmentation of geospatial images.
 
