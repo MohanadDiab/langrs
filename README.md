@@ -15,7 +15,7 @@
 
 LangRS  is a Python package for remote sensing image segmentation, it is built on top of the [Segment-Geospatial](https://github.com/opengeos/segment-geospatial) package. It combines advanced techniques like bounding box detection, semantic segmentation, and outlier rejection to deliver precise and reliable segmentation of geospatial images.
 
-## Citations
+## Citation
 TBD
 
 ## Features
@@ -25,6 +25,21 @@ TBD
 - **Area Calculation:** Compute and rank bounding boxes by their areas.
 - **Image Segmentation:** Detect and extract objects based on text prompts using LangSAM.
 ---
+
+## Example segmentation
+
+## 📊 Package Performance vs Ground Truth
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/10.png" alt="Performance Comparison" width="800"/>
+</p>
+
+## 🔄 Direct Comparison with Older Package
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/11.png" alt="Comparison with Older Package" width="800"/>
+</p>
+
 
 ## Installation
 
