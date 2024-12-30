@@ -1,3 +1,8 @@
+[![image](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/opengeos/segment-geospatial/blob/main/docs/examples/satellite.ipynb)
+
+[![image](https://img.shields.io/pypi/v/segment-geospatial.svg)](https://colab.research.google.com/github/MohanadDiab/langrs/examples/langrs.ipynb)
+
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/langrs_logo.png" alt="LangRS Logo" width="300"/>
 </p>
