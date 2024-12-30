@@ -9,7 +9,7 @@
   <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/langrs_logo.png" alt="LangRS Logo" width="300"/>
 </p>
 
-** A python package that omptimizes zero-shot segmentation of aerial image based with GroundingDINO and Segment Anything Model (SAM) **
+**A python package that omptimizes zero-shot segmentation of aerial image based with GroundingDINO and Segment Anything Model (SAM)**
 
 # Introduction
 
