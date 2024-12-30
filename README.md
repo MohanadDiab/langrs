@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/langrs_logo.png" alt="LangRS Logo" width="200"/>
+  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/langrs_logo.png" alt="LangRS Logo" width="500"/>
 </p>
 
 
