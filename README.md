@@ -1,4 +1,6 @@
-![LangRS Logo](https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/langrs_logo.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/langrs_logo.png" alt="LangRS Logo" width="200"/>
+</p>
 
 
 # LangRS 
