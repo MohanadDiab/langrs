@@ -65,10 +65,13 @@ class LangRS:
         except Exception as e:
             raise RuntimeError(f"Error initializing LangRS: {e}")
 
-    def predict(self):
+    def predict(self, rejection_method=None):
         """
         Placeholder method for model prediction.
         """
+        bounding_boxes = self.predict_dino()
+        bounding_boxes_filtered = self.outlier_rejection()
+        masks = self.predict_sam(rejection_method=rejection_method)
         pass
 
     def predict_dino(self, window_size=500, overlap=200, box_threshold=0.5, text_threshold=0.5, text_prompt=None):
@@ -124,14 +127,17 @@ class LangRS:
         """
         Generate segmentation masks using LangSAM based on detected bounding boxes.
         """
+        output_path = self.output_path_image_masks
         if rejection_method:
             if rejection_method in self.rejection_methods:
                 self.prediction_boxes =  self.rejection_methods[rejection_method]
+                output_path = self.output_path_image_masks.split(".")[0] + f"_{rejection_method}.jpg"
             else:
                 raise KeyError("The provided rejection method is not recognized")
         else:
             self.prediction_boxes = self.bounding_boxes
         
+
         try:
             self.boxes_tensor = torch.tensor(np.array(self.prediction_boxes))
             self.masks_out = self.sam.predict_sam(image=self.pil_image, boxes=self.boxes_tensor)
@@ -151,8 +157,10 @@ class LangRS:
             ax.axis('off')  # Turn off the axes
 
             # Save the figure with tight bounding box to remove whitespace
-            plt.savefig(self.output_path_image_masks, bbox_inches='tight', pad_inches=0)
+            plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
             plt.close()
+
+            return self.mask_overlay
 
         except Exception as e:
             raise RuntimeError(f"Error in predict_sam: {e}")
@@ -187,6 +195,7 @@ class LangRS:
                 "lof": self.y_pred_lof,
                 "isolation_forest": self.y_pred_iso
             }
+            return self.rejection_methods
 
         except Exception as e:
             raise RuntimeError(f"Error in outlier_rejection: {e}")

@@ -43,22 +43,29 @@ from langrs.core import LangRS
 
 def main():
     # Specify a text prompt to identify objects in the image
-    text_input = "roof"
+    text_input = "object"
 
     # Path to the input remote sensing image
-    image_input = "data/roi_kala.tif"
+    image_input = "path_to_your_tif_file"
 
     # Initialize LangRS with the input image, text prompt, and output directory
-    langrs = LangRS(image_input, text_input, "output")
+    langrs = LangRS(image_input, text_input, "output_folder")
 
-    # Detect bounding boxes using the sliding window approach
-    langrs.predict_dino(window_size=600, overlap=300, box_threshold=0.25, text_threshold=0.25)
+    # Detect bounding boxes using the sliding window approach with example parameters
+    bounding_boxes = langrs.predict_dino(window_size=600, overlap=300, box_threshold=0.25, text_threshold=0.25)
 
     # Apply outlier rejection to filter anomalous bounding boxes
-    langrs.outlier_rejection()
+    # This will return a dict with the follwing keys:
+    # ['zscore', 'iqr', 'svm', 'svm_sgd', 'robust_covariance', 'lof', 'isolation_forest']
+    # The value of each key represent the boudning boxes from the previous step with the 
+    # outlier rejection method of the key's name applied to them
+    bboxes_filtered = langrs.outlier_rejection()
 
-    # Generate segmentation masks for the filtered bounding boxes
-    langrs.predict_sam(rejection_method="zscore")
+    # Generate segmentation masks for the filtered bounding boxes of the provided key
+    masks = langrs.predict_sam(rejection_method="zscore")
+    # Or
+    masks = langrs.predict_sam(rejection_method="iqr")
+    
 
 if __name__ == "__main__":
     main()

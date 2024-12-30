@@ -7,3 +7,4 @@ scikit-learn==1.6.0
 scipy==1.14.1
 segment-anything-py==1.0.1
 segment-geospatial==0.12.3
+groundingdino-py==0.4.0

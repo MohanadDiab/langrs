@@ -1,14 +1,14 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="langrs_segmentation",
-    version="0.1.0",
-    author="Your Name",
-    author_email="your_email@example.com",
+    name="langrs",
+    version="0.1.7",
+    author="Mohanad Diab",
+    author_email="mdiab@eurac.edu",
     description="Remote sensing image segmentation using LangSAM",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/langrs_segmentation",
+    url="https://github.com/MohanadDiab/langrs",
     packages=find_packages(),
     install_requires=[
         "numpy",
@@ -17,13 +17,15 @@ setup(
         "rasterio",
         "torch",
         "scipy",
-        "sklearn",
-        "samgeo",
+        "scikit-learn",
+        "segment-geospatial",
+        "groundingdino-py"
     ],
+
     classifiers=[
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.10",
 )
