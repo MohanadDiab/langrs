@@ -26,21 +26,6 @@ TBD
 - **Image Segmentation:** Detect and extract objects based on text prompts using LangSAM.
 ---
 
-## Example segmentation
-
-## 📊 Package Performance vs Ground Truth
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/10.png" alt="Performance Comparison" width="800"/>
-</p>
-
-## 🔄 Direct Comparison with Older Package
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/11.png" alt="Comparison with Older Package" width="800"/>
-</p>
-
-
 ## Installation
 
 
@@ -123,6 +108,20 @@ Applies multiple outlier detection methods (e.g., Z-Score, IQR, SVM, LOF) to fil
 - `rejection_method` (str): The method used for filtering outliers. Options include `zscore`, `iqr`, `svm`, `lof`, etc.
 
 ---
+
+## Example segmentation
+
+## 📊 Package Performance vs Ground Truth
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/10.png" alt="Performance Comparison" width="800"/>
+</p>
+
+## 🔄 Direct Comparison with Older Package
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/11.png" alt="Comparison with Older Package" width="800"/>
+</p>
 
 ## Output
 
