@@ -1,8 +1,9 @@
-[![logo](https://github.com/MohanadDiab/langrs/tree/main/data)]
+![LangRS Logo](https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/langrs_logo.png)
 
-# LangRS Segmentation
 
-LangRS Segmentation is a Python package for remote sensing image segmentation, it is built on top of the [Segment-Geospatial](https://github.com/opengeos/segment-geospatial) package. It combines advanced techniques like bounding box detection, semantic segmentation, and outlier rejection to deliver precise and reliable segmentation of geospatial images.
+# LangRS 
+
+LangRS  is a Python package for remote sensing image segmentation, it is built on top of the [Segment-Geospatial](https://github.com/opengeos/segment-geospatial) package. It combines advanced techniques like bounding box detection, semantic segmentation, and outlier rejection to deliver precise and reliable segmentation of geospatial images.
 
 ## Citations
 TBD
@@ -17,15 +18,18 @@ TBD
 
 ## Installation
 
-### Prerequisites
 
-Ensure you have Python 3.10 or higher installed. Install the required dependencies:
+### Install LangRS with pip
+
 
 ```bash
-pip install -r requirements.txt
+pip install langrs
 ```
 
-### Install LangRS Segmentation
+### Direct install
+
+
+Ensure you have Python 3.10 or higher installed. Install the required dependencies.
 
 Clone the repository and install the package locally:
 
