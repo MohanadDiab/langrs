@@ -1,7 +1,6 @@
 # LangRS 
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/MohanadDiab/langrs/blob/main/examples/langrs.ipynb)
-
 [![PyPI version](https://badge.fury.io/py/langrs.svg)](https://pypi.python.org/pypi/langrs)
 
 
