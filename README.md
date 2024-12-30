@@ -1,15 +1,18 @@
+[![logo](https://github.com/MohanadDiab/langrs/tree/main/data)]
+
 # LangRS Segmentation
 
-LangRS Segmentation is a Python package for remote sensing image segmentation. It combines advanced techniques like bounding box detection, semantic segmentation, and outlier rejection to deliver precise and reliable analysis of geospatial images.
+LangRS Segmentation is a Python package for remote sensing image segmentation, it is built on top of the [Segment-Geospatial](https://github.com/opengeos/segment-geospatial) package. It combines advanced techniques like bounding box detection, semantic segmentation, and outlier rejection to deliver precise and reliable segmentation of geospatial images.
+
+## Citations
+TBD
 
 ## Features
 
-- **Image Segmentation:** Detect and extract objects based on text prompts using LangSAM.
 - **Bounding Box Detection:** Locate objects in remote sensing images with a sliding window approach.
-- **Outlier Detection:** Apply various statistical and machine learning methods to filter out anomalies in the detected objects.
+- **Outlier Detection:** Apply various statistical and machine learning methods to filter out anomalies in the detected objects based on the area of the detected bounding boxes.
 - **Area Calculation:** Compute and rank bounding boxes by their areas.
-- **Modular Design:** Easily extend functionality for custom workflows.
-
+- **Image Segmentation:** Detect and extract objects based on text prompts using LangSAM.
 ---
 
 ## Installation
