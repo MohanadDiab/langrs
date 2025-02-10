@@ -12,29 +12,18 @@ from PIL import Image
 from .outlier_detection import *
 import torch
 
-class LangRS:
+class LangRS(LangSAM):
     """
     A class for performing remote sensing image segmentation, bounding box detection,
     outlier rejection, and area calculations using LangSAM.
-
-    Attributes:
-        image_path (str): Path to the input image.
-        prompt (str): Text prompt for object detection.
-        output_path (str): Directory to save the results.
-        sam (LangSAM): Instance of LangSAM for semantic segmentation.
-        pil_image (PIL.Image.Image): Loaded image as a PIL object.
-        np_image (numpy.ndarray): Loaded image as a NumPy array.
     """
 
     def __init__(self, image, prompt, output_path):
         """
         Initialize the LangRS class with the input image, text prompt, and output path.
-
-        Args:
-            image (str): Path to the input image.
-            prompt (str): Text prompt for object detection.
-            output_path (str): Path to save the output results.
         """
+        super().__init__()
+        
         try:
             if not os.path.isfile(image):
                 raise FileNotFoundError(f"Image file not found: {image}")
@@ -53,7 +42,6 @@ class LangRS:
             self.output_path_image_boxes = os.path.join(self.output_path, 'results_dino.jpg')
             self.output_path_image_masks = os.path.join(self.output_path, 'results_sam.jpg')
             self.output_path_image_areas = os.path.join(self.output_path, 'results_areas.jpg')
-            self.sam = LangSAM()
 
             # Load the image as a NumPy array for RGB bands only
             with rasterio.open(self.image_path) as src:
@@ -66,13 +54,10 @@ class LangRS:
             raise RuntimeError(f"Error initializing LangRS: {e}")
 
     def predict(self, rejection_method=None):
-        """
-        Placeholder method for model prediction.
-        """
-        bounding_boxes = self.predict_dino()
-        bounding_boxes_filtered = self.outlier_rejection()
-        masks = self.predict_sam(rejection_method=rejection_method)
-        pass
+        self.predict_dino()
+        self.outlier_rejection()
+        return self.predict_sam(rejection_method=rejection_method)
+
 
     def predict_dino(self, window_size=500, overlap=200, box_threshold=0.5, text_threshold=0.5, text_prompt=None):
         """
@@ -92,7 +77,7 @@ class LangRS:
             if text_prompt is None:
                 text_prompt = self.prompt
 
-            self.bounding_boxes = self._run_detection_on_chunks(
+            self.bounding_boxes = self._run_hyperinference(
                 image=self.pil_image,
                 text_prompt=text_prompt,
                 chunk_size=window_size,
@@ -124,46 +109,46 @@ class LangRS:
             raise RuntimeError(f"Error in predict_dino: {e}")
 
     def predict_sam(self, rejection_method=None):
-        """
-        Generate segmentation masks using LangSAM based on detected bounding boxes.
-        """
-        output_path = self.output_path_image_masks
-        if rejection_method:
-            if rejection_method in self.rejection_methods:
-                self.prediction_boxes =  self.rejection_methods[rejection_method]
-                output_path = self.output_path_image_masks.split(".")[0] + f"_{rejection_method}.jpg"
+            """
+            Generate segmentation masks using inherited LangSAM functionality.
+            """
+            output_path = self.output_path_image_masks
+            
+            if rejection_method:
+                if rejection_method in self.rejection_methods:
+                    self.prediction_boxes =  self.rejection_methods[rejection_method]
+                    output_path = self.output_path_image_masks.split(".")[0] + f"_{rejection_method}.jpg"
+                else:
+                    raise KeyError("The provided rejection method is not recognized")
             else:
-                raise KeyError("The provided rejection method is not recognized")
-        else:
-            self.prediction_boxes = self.bounding_boxes
-        
+                self.prediction_boxes = self.bounding_boxes
+            
+            try:
+                self.boxes_tensor = torch.tensor(np.array(self.prediction_boxes))
+                self.masks_out = super().predict_sam(image=self.pil_image, boxes=self.boxes_tensor)
+                self.masks = self.masks_out.squeeze(1)
 
-        try:
-            self.boxes_tensor = torch.tensor(np.array(self.prediction_boxes))
-            self.masks_out = self.sam.predict_sam(image=self.pil_image, boxes=self.boxes_tensor)
-            self.masks = self.masks_out.squeeze(1)
+                mask_overlay = np.zeros_like(self.np_image[..., 0], dtype=np.uint8)
 
-            mask_overlay = np.zeros_like(self.np_image[..., 0], dtype=np.uint8)
+                for i, (box, mask) in enumerate(zip(self.boxes_tensor, self.masks)):
+                    mask = mask.cpu().numpy().astype(np.uint8) if isinstance(mask, torch.Tensor) else mask
+                    mask_overlay += ((mask > 0) * (i + 1)).astype(np.uint8)
 
-            for i, (box, mask) in enumerate(zip(self.boxes_tensor, self.masks)):
-                mask = mask.cpu().numpy().astype(np.uint8) if isinstance(mask, torch.Tensor) else mask
-                mask_overlay += ((mask > 0) * (i + 1)).astype(np.uint8)
+                self.mask_overlay = (mask_overlay > 0) * 255
 
-            self.mask_overlay = (mask_overlay > 0) * 255
+                fig, ax = plt.subplots()
+                ax.imshow(self.np_image)
+                ax.imshow(self.mask_overlay, cmap="viridis", alpha=0.4)
+                ax.axis('off')  # Turn off the axes
 
-            fig, ax = plt.subplots()
-            ax.imshow(self.np_image)
-            ax.imshow(self.mask_overlay, cmap="viridis", alpha=0.4)
-            ax.axis('off')  # Turn off the axes
+                # Save the figure with tight bounding box to remove whitespace
+                plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
+                plt.close()
 
-            # Save the figure with tight bounding box to remove whitespace
-            plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
-            plt.close()
+                return self.mask_overlay
 
-            return self.mask_overlay
-
-        except Exception as e:
-            raise RuntimeError(f"Error in predict_sam: {e}")
+            except Exception as e:
+                raise RuntimeError(f"Error in predict_sam: {e}")
 
     def outlier_rejection(self):
         """
@@ -230,7 +215,7 @@ class LangRS:
         except Exception as e:
             raise RuntimeError(f"Error in _area_calculator: {e}")
 
-    def _run_detection_on_chunks(self, image, chunk_size=1000, overlap=300, box_threshold=0.3, text_threshold=0.75, text_prompt=""):
+    def _run_hyperinference(self, image, chunk_size=1000, overlap=300, box_threshold=0.3, text_threshold=0.75, text_prompt=""):
         """
         Run object detection on image chunks with overlap.
 
