@@ -3,11 +3,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import os
 import datetime
-from samgeo import tms_to_geotiff, split_raster
 from samgeo.text_sam import LangSAM
 import rasterio
-from rasterio.plot import show
-from rasterio.enums import Resampling
 from PIL import Image
 from .outlier_detection import *
 import torch
