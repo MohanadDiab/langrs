@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="langrs",
-    version="0.1.7",
+    version="1.0.0",
     author="Mohanad Diab",
     author_email="mdiab@eurac.edu",
     description="Remote sensing image segmentation using LangSAM",
