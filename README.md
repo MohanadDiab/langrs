@@ -50,19 +50,6 @@ keywords = {Foundation models, Multi-modal models, Vision language models, Seman
 pip install langrs
 ```
 
-### Direct install
-
-
-Ensure you have Python 3.10 or higher installed. Install the required dependencies.
-
-Install the package directly (or directly clone this repo):
-
-```bash
-pip install langrs
-```
-
----
-
 ## Usage
 
 Here is an example of how to use the `LangRS` class for remote sensing image segmentation:
