@@ -81,7 +81,7 @@ def main():
     langrs = LangRS(image_input, text_input, "output_folder")
 
     # Detect bounding boxes using the sliding window approach with example parameters
-    bounding_boxes = langrs.predict_dino(window_size=600, overlap=300, box_threshold=0.25, text_threshold=0.25)
+    bounding_boxes = langrs.generate_boxes(window_size=600, overlap=300, box_threshold=0.25, text_threshold=0.25)
 
     # Apply outlier rejection to filter anomalous bounding boxes
     # This will return a dict with the follwing keys:
@@ -91,9 +91,9 @@ def main():
     bboxes_filtered = langrs.outlier_rejection()
 
     # Generate segmentation masks for the filtered bounding boxes of the provided key
-    masks = langrs.predict_sam(rejection_method="zscore")
+    masks = langrs.generate_masks(rejection_method="zscore")
     # Or
-    masks = langrs.predict_sam(rejection_method="iqr")
+    masks = langrs.generate_masks(rejection_method="iqr")
     
 
 if __name__ == "__main__":
@@ -107,7 +107,7 @@ if __name__ == "__main__":
 - `prompt`: Text prompt for object detection.
 - `output_path`: Directory to save output files.
 
-#### `predict_dino`:
+#### `generate_boxes`:
 - `window_size` (int): Size of each chunk for processing. Default is `500`.
 - `overlap` (int): Overlap size between chunks. Default is `200`.
 - `box_threshold` (float): Confidence threshold for box detection. Default is `0.5`.
@@ -116,7 +116,7 @@ if __name__ == "__main__":
 #### `outlier_rejection`:
 Applies multiple outlier detection methods (e.g., Z-Score, IQR, SVM, LOF) to filter bounding boxes.
 
-#### `predict_sam`:
+#### `generate_masks`:
 - `rejection_method` (str): The method used for filtering outliers. Options include `zscore`, `iqr`, `svm`, `lof`, etc.
 
 ---
