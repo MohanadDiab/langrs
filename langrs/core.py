@@ -51,12 +51,11 @@ class LangRS(LangSAM):
             raise RuntimeError(f"Error initializing LangRS: {e}")
 
     def predict(self, rejection_method=None):
-        self.predict_dino()
+        self.generate_boxes()
         self.outlier_rejection()
-        return self.predict_sam(rejection_method=rejection_method)
+        return self.generate_masks(rejection_method=rejection_method)
 
-
-    def predict_dino(self, window_size=500, overlap=200, box_threshold=0.5, text_threshold=0.5, text_prompt=None):
+    def generate_boxes(self, window_size=500, overlap=200, box_threshold=0.5, text_threshold=0.5, text_prompt=None):
         """
         Detect bounding boxes using LangSAM with a sliding window approach.
 
@@ -103,9 +102,9 @@ class LangRS(LangSAM):
             return self.bounding_boxes
 
         except Exception as e:
-            raise RuntimeError(f"Error in predict_dino: {e}")
+            raise RuntimeError(f"Error in generate_boxes: {e}")
 
-    def predict_sam(self, rejection_method=None):
+    def generate_masks(self, rejection_method=None):
             """
             Generate segmentation masks using inherited LangSAM functionality.
             """
@@ -122,7 +121,7 @@ class LangRS(LangSAM):
             
             try:
                 self.boxes_tensor = torch.tensor(np.array(self.prediction_boxes))
-                self.masks_out = super().predict_sam(image=self.pil_image, boxes=self.boxes_tensor)
+                self.masks_out = self.predict_sam(image=self.pil_image, boxes=self.boxes_tensor)
                 self.masks = self.masks_out.squeeze(1)
 
                 mask_overlay = np.zeros_like(self.np_image[..., 0], dtype=np.uint8)
@@ -145,7 +144,7 @@ class LangRS(LangSAM):
                 return self.mask_overlay
 
             except Exception as e:
-                raise RuntimeError(f"Error in predict_sam: {e}")
+                raise RuntimeError(f"Error in generate_masks: {e}")
 
     def outlier_rejection(self):
         """
@@ -232,7 +231,7 @@ class LangRS(LangSAM):
             all_bounding_boxes = []
 
             for chunk, offset_x, offset_y in chunks:
-                results = self.sam.predict_dino(
+                results = self.predict_dino(
                     image=chunk,
                     box_threshold=box_threshold,
                     text_threshold=text_threshold,
@@ -244,7 +243,7 @@ class LangRS(LangSAM):
             return all_bounding_boxes
 
         except Exception as e:
-            raise RuntimeError(f"Error in _run_detection_on_chunks: {e}")
+            raise RuntimeError(f"Error in hyperinference: {e}")
 
     def _slice_image_with_overlap(self, image, chunk_size=300, overlap=100):
         """
