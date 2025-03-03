@@ -4,9 +4,11 @@ import matplotlib.patches as patches
 import os
 import datetime
 from samgeo.text_sam import LangSAM
+from samgeo.common import *
 import rasterio
 from PIL import Image
 from .outlier_detection import *
+from .common import convert_bounding_boxes_to_geospatial, convert_masks_to_geospatial
 import torch
 
 class LangRS(LangSAM):
@@ -46,6 +48,8 @@ class LangRS(LangSAM):
 
             self.pil_image = Image.fromarray(np.transpose(rgb_image, (1, 2, 0)))
             self.np_image = np.array(self.pil_image)
+            self.source_crs = get_crs(self.image_path)
+
 
         except Exception as e:
             raise RuntimeError(f"Error initializing LangRS: {e}")
@@ -99,6 +103,13 @@ class LangRS(LangSAM):
 
             self._area_calculator()
 
+            gdf_boxes = convert_bounding_boxes_to_geospatial(
+                        bounding_boxes=self.bounding_boxes,
+                        image_path=self.image_path,
+                        )
+            
+            gdf_boxes.to_file(os.path.join(self.output_path, 'bounding_boxes.shp'))
+
             return self.bounding_boxes
 
         except Exception as e:
@@ -140,6 +151,20 @@ class LangRS(LangSAM):
                 # Save the figure with tight bounding box to remove whitespace
                 plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
                 plt.close()
+
+                gdf_boxes = convert_bounding_boxes_to_geospatial(
+                            bounding_boxes=self.prediction_boxes,
+                            image_path=self.image_path,
+                            )
+                
+                gdf_boxes.to_file(os.path.join(self.output_path, 'bounding_boxes_filtered.shp'))
+
+                gdf_masks = convert_masks_to_geospatial(
+                    masks=self.mask_overlay,
+                    image_path=self.image_path,
+                )  
+
+                gdf_masks.to_file(os.path.join(self.output_path, 'masks.shp'))
 
                 return self.mask_overlay
 
