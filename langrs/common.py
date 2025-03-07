@@ -3,6 +3,10 @@ import numpy as np
 import geopandas as gpd
 from shapely.geometry import Polygon, shape
 from rasterio.features import shapes
+import rasterio
+from samgeo.common import get_crs
+from PIL import Image
+import os
 
 
 def read_image_metadata(image_path):
@@ -103,3 +107,65 @@ def convert_masks_to_geospatial(masks, image_path=None, crs=None):
     gdf_masks = gpd.GeoDataFrame(geometry=gpd.GeoSeries(mask_polygons), crs=crs)
 
     return gdf_masks
+
+
+def load_image(image):
+    """
+    Load an image from file path, numpy array, or PIL Image object.
+
+    Args:
+        image (str | np.ndarray | PIL.Image.Image): Input image provided as:
+                                                    - A file path (GeoTIFF, PNG, JPG)
+                                                    - A NumPy array with shape (H, W, C)
+                                                    - A PIL Image object
+
+    Returns:
+        tuple:
+            - image_path (str or None): Original file path, or None if not from file.
+            - pil_image (PIL.Image.Image): Loaded image as PIL object.
+            - np_image (np.ndarray): Loaded image as NumPy array (H, W, C).
+            - source_crs (str or None): Coordinate reference system if available (for GeoTIFF).
+
+    Raises:
+        FileNotFoundError: If the provided file path does not exist.
+        ValueError: If the image format is unsupported.
+        TypeError: If the input type is not recognized.
+    """
+
+    if isinstance(image, str):
+        if not os.path.isfile(image):
+            raise FileNotFoundError(f"Image file not found: {image}")
+
+        ext = os.path.splitext(image)[-1].lower()
+
+        if ext in ['.tif', '.tiff']:
+            with rasterio.open(image) as src:
+                rgb_image = np.array(src.read([1, 2, 3]))
+            pil_image = Image.fromarray(np.transpose(rgb_image, (1, 2, 0)))
+            np_image = np.array(pil_image)
+            source_crs = get_crs(image)
+
+        elif ext in ['.jpg', '.jpeg', '.png']:
+            pil_image = Image.open(image).convert('RGB')
+            np_image = np.array(pil_image)
+            source_crs = None  # No CRS for non-georeferenced images
+
+        else:
+            raise ValueError(f"Unsupported image format: {ext}")
+
+        return image, pil_image, np_image, source_crs
+
+    elif isinstance(image, np.ndarray):
+        if image.ndim != 3 or image.shape[-1] not in [3, 4]:
+            raise ValueError("Expected RGB(A) image with shape (H, W, 3) or (H, W, 4)")
+        np_image = image[..., :3]  # Drop alpha if present
+        pil_image = Image.fromarray(np_image.astype(np.uint8))
+        return None, pil_image, np_image, None
+
+    elif isinstance(image, Image.Image):
+        pil_image = image.convert('RGB')
+        np_image = np.array(pil_image)
+        return None, pil_image, np_image, None
+
+    else:
+        raise TypeError("Unsupported image input. Must be file path (str), numpy array, or PIL image.")

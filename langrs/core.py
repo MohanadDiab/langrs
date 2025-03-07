@@ -5,10 +5,9 @@ import os
 import datetime
 from samgeo.text_sam import LangSAM
 from samgeo.common import *
-import rasterio
 from PIL import Image
 from .outlier_detection import *
-from .common import convert_bounding_boxes_to_geospatial, convert_masks_to_geospatial
+from .common import *
 import torch
 
 class LangRS(LangSAM):
@@ -20,15 +19,22 @@ class LangRS(LangSAM):
     def __init__(self, image, prompt, output_path):
         """
         Initialize the LangRS class with the input image, text prompt, and output path.
+
+        Args:
+            image (str | np.ndarray | PIL.Image.Image): Input image, provided as a file path (GeoTIFF, PNG, JPG), 
+                                                        a NumPy array (H, W, C), or a PIL Image object.
+            prompt (str): Text prompt to guide the segmentation process.
+            output_path (str): Directory path to save the results.
+
+        Raises:
+            FileNotFoundError: If the provided file path does not exist.
+            RuntimeError: If initialization fails due to an unexpected error.
         """
+
         super().__init__()
         
         try:
-            if not os.path.isfile(image):
-                raise FileNotFoundError(f"Image file not found: {image}")
-
             os.makedirs(output_path, exist_ok=True)
-            self.image_path = image
             self.prompt = prompt
 
             # Create a dynamic output path with a timestamp
@@ -42,37 +48,47 @@ class LangRS(LangSAM):
             self.output_path_image_masks = os.path.join(self.output_path, 'results_sam.jpg')
             self.output_path_image_areas = os.path.join(self.output_path, 'results_areas.jpg')
 
-            # Load the image as a NumPy array for RGB bands only
-            with rasterio.open(self.image_path) as src:
-                rgb_image = np.array(src.read([1, 2, 3]))
-
-            self.pil_image = Image.fromarray(np.transpose(rgb_image, (1, 2, 0)))
-            self.np_image = np.array(self.pil_image)
-            self.source_crs = get_crs(self.image_path)
-
+            # Load image and extract metadata
+            self.image_path, self.pil_image, self.np_image, self.source_crs = load_image(image)
 
         except Exception as e:
             raise RuntimeError(f"Error initializing LangRS: {e}")
 
     def predict(self, rejection_method=None):
+        """
+        Run the full prediction pipeline, including box generation, outlier rejection, 
+        and mask generation.
+
+        Args:
+            rejection_method (str, optional): Name of the outlier rejection method to apply.
+                                            If None, all detected boxes are used.
+
+        Returns:
+            np.ndarray: Segmentation mask overlay.
+        """
+
         self.generate_boxes()
         self.outlier_rejection()
         return self.generate_masks(rejection_method=rejection_method)
 
     def generate_boxes(self, window_size=500, overlap=200, box_threshold=0.5, text_threshold=0.5, text_prompt=None):
         """
-        Detect bounding boxes using LangSAM with a sliding window approach.
+        Detect bounding boxes using a sliding window approach with LangSAM.
 
         Args:
-            window_size (int, optional: default=500): Size of each chunk for detection.
-            overlap (int, optional: default=200): Overlap size between chunks.
-            box_threshold (float, optional: default=0.5): Confidence threshold for box detection.
-            text_threshold (float, optional: default=0.5): Confidence threshold for text detection.
-            text_prompt (str, optional): Custom text prompt for object detection.
+            window_size (int, optional): Size of the window for detection. Default is 500.
+            overlap (int, optional): Overlap between windows to improve detection continuity. Default is 200.
+            box_threshold (float, optional): Confidence threshold for detecting boxes. Default is 0.5.
+            text_threshold (float, optional): Confidence threshold for text-based detection. Default is 0.5.
+            text_prompt (str, optional): Custom text prompt for object detection. If None, uses the class prompt.
 
         Returns:
-            list: Detected bounding boxes.
+            list: Detected bounding boxes in the format [(x_min, y_min, x_max, y_max), ...].
+
+        Raises:
+            RuntimeError: If an error occurs during box generation.
         """
+
         try:
             if text_prompt is None:
                 text_prompt = self.prompt
@@ -116,65 +132,84 @@ class LangRS(LangSAM):
             raise RuntimeError(f"Error in generate_boxes: {e}")
 
     def generate_masks(self, rejection_method=None):
-            """
-            Generate segmentation masks using inherited LangSAM functionality.
-            """
-            output_path = self.output_path_image_masks
-            
-            if rejection_method:
-                if rejection_method in self.rejection_methods:
-                    self.prediction_boxes =  self.rejection_methods[rejection_method]
-                    output_path = self.output_path_image_masks.split(".")[0] + f"_{rejection_method}.jpg"
-                else:
-                    raise KeyError("The provided rejection method is not recognized")
+        """
+        Generate segmentation masks for detected objects using the SAM model.
+
+        Args:
+            rejection_method (str, optional): Name of the outlier rejection method to apply 
+                                            before mask generation. If None, all detected boxes are used.
+
+        Returns:
+            np.ndarray: Overlay mask representing segmented areas.
+
+        Raises:
+            KeyError: If the specified rejection method is not recognized.
+            RuntimeError: If mask generation fails due to an unexpected error.
+        """
+
+        output_path = self.output_path_image_masks
+        
+        if rejection_method:
+            if rejection_method in self.rejection_methods:
+                self.prediction_boxes =  self.rejection_methods[rejection_method]
+                output_path = self.output_path_image_masks.split(".")[0] + f"_{rejection_method}.jpg"
             else:
-                self.prediction_boxes = self.bounding_boxes
+                raise KeyError("The provided rejection method is not recognized")
+        else:
+            self.prediction_boxes = self.bounding_boxes
+        
+        try:
+            self.boxes_tensor = torch.tensor(np.array(self.prediction_boxes))
+            self.masks_out = self.predict_sam(image=self.pil_image, boxes=self.boxes_tensor)
+            self.masks = self.masks_out.squeeze(1)
+
+            mask_overlay = np.zeros_like(self.np_image[..., 0], dtype=np.uint8)
+
+            for i, (box, mask) in enumerate(zip(self.boxes_tensor, self.masks)):
+                mask = mask.cpu().numpy().astype(np.uint8) if isinstance(mask, torch.Tensor) else mask
+                mask_overlay += ((mask > 0) * (i + 1)).astype(np.uint8)
+
+            self.mask_overlay = (mask_overlay > 0) * 255
+
+            fig, ax = plt.subplots()
+            ax.imshow(self.np_image)
+            ax.imshow(self.mask_overlay, cmap="viridis", alpha=0.4)
+            ax.axis('off')  # Turn off the axes
+
+            # Save the figure with tight bounding box to remove whitespace
+            plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
+            plt.close()
+
+            gdf_boxes = convert_bounding_boxes_to_geospatial(
+                        bounding_boxes=self.prediction_boxes,
+                        image_path=self.image_path,
+                        )
             
-            try:
-                self.boxes_tensor = torch.tensor(np.array(self.prediction_boxes))
-                self.masks_out = self.predict_sam(image=self.pil_image, boxes=self.boxes_tensor)
-                self.masks = self.masks_out.squeeze(1)
+            gdf_boxes.to_file(os.path.join(self.output_path, 'bounding_boxes_filtered.shp'))
 
-                mask_overlay = np.zeros_like(self.np_image[..., 0], dtype=np.uint8)
+            gdf_masks = convert_masks_to_geospatial(
+                masks=self.mask_overlay,
+                image_path=self.image_path,
+            )  
 
-                for i, (box, mask) in enumerate(zip(self.boxes_tensor, self.masks)):
-                    mask = mask.cpu().numpy().astype(np.uint8) if isinstance(mask, torch.Tensor) else mask
-                    mask_overlay += ((mask > 0) * (i + 1)).astype(np.uint8)
+            gdf_masks.to_file(os.path.join(self.output_path, 'masks.shp'))
 
-                self.mask_overlay = (mask_overlay > 0) * 255
+            return self.mask_overlay
 
-                fig, ax = plt.subplots()
-                ax.imshow(self.np_image)
-                ax.imshow(self.mask_overlay, cmap="viridis", alpha=0.4)
-                ax.axis('off')  # Turn off the axes
-
-                # Save the figure with tight bounding box to remove whitespace
-                plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
-                plt.close()
-
-                gdf_boxes = convert_bounding_boxes_to_geospatial(
-                            bounding_boxes=self.prediction_boxes,
-                            image_path=self.image_path,
-                            )
-                
-                gdf_boxes.to_file(os.path.join(self.output_path, 'bounding_boxes_filtered.shp'))
-
-                gdf_masks = convert_masks_to_geospatial(
-                    masks=self.mask_overlay,
-                    image_path=self.image_path,
-                )  
-
-                gdf_masks.to_file(os.path.join(self.output_path, 'masks.shp'))
-
-                return self.mask_overlay
-
-            except Exception as e:
-                raise RuntimeError(f"Error in generate_masks: {e}")
+        except Exception as e:
+            raise RuntimeError(f"Error in generate_masks: {e}")
 
     def outlier_rejection(self):
         """
-        Perform outlier detection using multiple methods and save the results.
+        Perform outlier detection on detected bounding boxes using multiple statistical and ML methods.
+
+        Returns:
+            dict: Dictionary mapping each rejection method name to the corresponding filtered list of bounding boxes.
+
+        Raises:
+            RuntimeError: If an error occurs during outlier rejection.
         """
+
         try:
             self.output_path_image_zscore = os.path.join(self.output_path, 'results_zscore.jpg')
             self.output_path_image_iqr = os.path.join(self.output_path, 'results_iqr.jpg')
@@ -208,11 +243,16 @@ class LangRS(LangSAM):
 
     def _area_calculator(self, bounding_boxes=None):
         """
-        Calculate and sort bounding boxes by their areas.
+        Calculate areas of bounding boxes and sort them by size.
 
         Args:
-            bounding_boxes (list, optional): List of bounding boxes. Defaults to detected boxes.
+            bounding_boxes (list, optional): List of bounding boxes to process. 
+                                            Defaults to the detected boxes if None.
+
+        Raises:
+            RuntimeError: If area calculation fails due to an unexpected error.
         """
+
         try:
             if bounding_boxes is None:
                 bounding_boxes = self.bounding_boxes
@@ -238,19 +278,23 @@ class LangRS(LangSAM):
 
     def _run_hyperinference(self, image, chunk_size=1000, overlap=300, box_threshold=0.3, text_threshold=0.75, text_prompt=""):
         """
-        Run object detection on image chunks with overlap.
+        Run object detection on the image using a sliding window approach with overlap.
 
         Args:
-            image (PIL.Image.Image): Input image.
-            chunk_size (int): Size of each chunk for processing.
-            overlap (int): Overlap size between chunks.
-            box_threshold (float): Confidence threshold for bounding boxes.
-            text_threshold (float): Confidence threshold for text recognition.
-            text_prompt (str): Text prompt for object detection.
+            image (PIL.Image.Image): Input image for object detection.
+            chunk_size (int, optional): Size of the window for each chunk. Default is 1000.
+            overlap (int, optional): Overlap between adjacent chunks. Default is 300.
+            box_threshold (float, optional): Confidence threshold for boxes. Default is 0.3.
+            text_threshold (float, optional): Confidence threshold for text detection. Default is 0.75.
+            text_prompt (str, optional): Text prompt for object detection. Default is empty string.
 
         Returns:
-            list: Detected bounding boxes localized to the original image coordinates.
+            list: List of detected bounding boxes localized to the original image coordinates.
+
+        Raises:
+            RuntimeError: If the detection process fails.
         """
+
         try:
             chunks = self._slice_image_with_overlap(image, chunk_size, overlap)
             all_bounding_boxes = []
@@ -272,16 +316,21 @@ class LangRS(LangSAM):
 
     def _slice_image_with_overlap(self, image, chunk_size=300, overlap=100):
         """
-        Slice an image into overlapping chunks.
+        Slice an image into overlapping chunks for processing.
 
         Args:
             image (PIL.Image.Image): Input image to slice.
-            chunk_size (int): Size of each chunk.
-            overlap (int): Overlap size between chunks.
+            chunk_size (int, optional): Size of each chunk. Default is 300.
+            overlap (int, optional): Overlap size between adjacent chunks. Default is 100.
 
         Returns:
-            list: Tuples containing image chunks and their offsets (left, upper).
+            list: List of tuples, where each tuple contains a cropped image chunk and its 
+                (left, upper) offset in the original image.
+
+        Raises:
+            RuntimeError: If slicing fails due to an unexpected error.
         """
+
         try:
             width, height = image.size
             chunks = []
@@ -302,16 +351,20 @@ class LangRS(LangSAM):
 
     def _localize_bounding_boxes(self, bounding_boxes, offset_x, offset_y):
         """
-        Localize bounding boxes to original image coordinates.
+        Convert bounding boxes from chunk coordinates to original image coordinates.
 
         Args:
-            bounding_boxes (list): List of bounding boxes in chunk coordinates.
+            bounding_boxes (list): List of bounding boxes detected in a chunk.
             offset_x (int): Horizontal offset of the chunk in the original image.
             offset_y (int): Vertical offset of the chunk in the original image.
 
         Returns:
-            list: Bounding boxes localized to the original image coordinates.
+            list: List of bounding boxes adjusted to the full image coordinates.
+
+        Raises:
+            RuntimeError: If localization fails due to an unexpected error.
         """
+
         try:
             localized_boxes = []
 
