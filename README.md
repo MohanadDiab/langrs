@@ -4,7 +4,6 @@
 [![PyPI version](https://badge.fury.io/py/langrs.svg)](https://pypi.python.org/pypi/langrs)
 
 
-
 <p align="center">
   <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/langrs_logo.png" alt="LangRS Logo" width="300"/>
 </p>
@@ -32,6 +31,25 @@ keywords = {Foundation models, Multi-modal models, Vision language models, Seman
 }
 ```
 
+## How it works 
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/pres.gif" alt="Performance Comparison" width="600"/>
+</p>
+
+## 📊 Package Performance vs Ground Truth
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/10.png" alt="Performance Comparison" width="600"/>
+</p>
+
+## 🔄 Direct Comparison with SAMGEO Package
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/11.png" alt="Comparison with Older Package" width="600"/>
+</p>
+
+
 ## Features
 
 - **Bounding Box Detection:** Locate objects in remote sensing images with a sliding window approach.
@@ -45,17 +63,17 @@ keywords = {Foundation models, Multi-modal models, Vision language models, Seman
 
 ### Install LangRS with pip
 
-
 ```bash
 pip install langrs
 ```
+
 
 ## Usage
 
 Here is an example of how to use the `LangRS` class for remote sensing image segmentation:
 
 ```python
-from langrs.core import LangRS
+from langrs import LangRS
 
 def main():
     # Specify a text prompt to identify objects in the image
@@ -107,26 +125,6 @@ Applies multiple outlier detection methods (e.g., Z-Score, IQR, SVM, LOF) to fil
 - `rejection_method` (str): The method used for filtering outliers. Options include `zscore`, `iqr`, `svm`, `lof`, etc.
 
 ---
-
-## Example segmentation
-
-## How it works 
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/pres.gif" alt="Performance Comparison" width="600"/>
-</p>
-
-## 📊 Package Performance vs Ground Truth
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/10.png" alt="Performance Comparison" width="600"/>
-</p>
-
-## 🔄 Direct Comparison with SAMGEO Package
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/11.png" alt="Comparison with Older Package" width="600"/>
-</p>
 
 ## Output
 
