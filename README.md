@@ -113,19 +113,19 @@ Applies multiple outlier detection methods (e.g., Z-Score, IQR, SVM, LOF) to fil
 ## How it works 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/pres.gif" alt="Workflow" width="800"/>
+  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/pres.gif" alt="Performance Comparison" width="600"/>
 </p>
 
 ## 📊 Package Performance vs Ground Truth
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/10.png" alt="Performance Comparison" width="800"/>
+  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/10.png" alt="Performance Comparison" width="600"/>
 </p>
 
 ## 🔄 Direct Comparison with SAMGEO Package
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/11.png" alt="Comparison with Older Package" width="800"/>
+  <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/11.png" alt="Comparison with Older Package" width="600"/>
 </p>
 
 ## Output
