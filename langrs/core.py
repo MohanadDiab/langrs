@@ -44,6 +44,7 @@ class LangRS(LangSAM):
 
             # Define output file paths
             self.output_path_image = os.path.join(self.output_path, 'original_image.jpg')
+            self.output_path_image = os.path.join(self.output_path, 'original_image.jpg')
             self.output_path_image_boxes = os.path.join(self.output_path, 'results_dino.jpg')
             self.output_path_image_masks = os.path.join(self.output_path, 'results_sam.jpg')
             self.output_path_image_areas = os.path.join(self.output_path, 'results_areas.jpg')
@@ -122,6 +123,8 @@ class LangRS(LangSAM):
             plt.close()
 
             self._area_calculator()
+
+            self.outlier_rejection()
 
             if self.isgeo:
                 gdf_boxes = convert_bounding_boxes_to_geospatial(
@@ -205,7 +208,7 @@ class LangRS(LangSAM):
         except Exception as e:
             raise RuntimeError(f"Error in generate_masks: {e}")
 
-    def outlier_rejection(self):
+    def outlier_rejection(self, method=None):
         """
         Perform outlier detection on detected bounding boxes using multiple statistical and ML methods.
 
@@ -242,8 +245,11 @@ class LangRS(LangSAM):
                 "lof": self.y_pred_lof,
                 "isolation_forest": self.y_pred_iso
             }
-            return self.rejection_methods
-
+            if method is None:
+              return self.rejection_methods
+            else:
+                return self.rejection_methods[method]
+            
         except Exception as e:
             raise RuntimeError(f"Error in outlier_rejection: {e}")
 

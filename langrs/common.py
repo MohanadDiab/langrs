@@ -169,3 +169,4 @@ def load_image(image):
 
     else:
         raise TypeError("Unsupported image input. Must be file path (str), numpy array, or PIL image.")
+        
