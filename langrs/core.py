@@ -44,6 +44,7 @@ class LangRS(LangSAM):
 
             # Define output file paths
             self.output_path_image = os.path.join(self.output_path, 'original_image.jpg')
+            self.output_path_image = os.path.join(self.output_path, 'original_image.jpg')
             self.output_path_image_boxes = os.path.join(self.output_path, 'results_dino.jpg')
             self.output_path_image_masks = os.path.join(self.output_path, 'results_sam.jpg')
             self.output_path_image_areas = os.path.join(self.output_path, 'results_areas.jpg')
@@ -51,10 +52,14 @@ class LangRS(LangSAM):
             # Load image and extract metadata
             self.image_path, self.pil_image, self.np_image, self.source_crs = load_image(image)
 
+            # isgeo is a flag to check if the input image is georeferenced
+            self.isgeo = True if self.source_crs is not None else False
+ 
+
         except Exception as e:
             raise RuntimeError(f"Error initializing LangRS: {e}")
 
-    def predict(self, rejection_method=None):
+    def predict(self, rejection_method=None, window_size=500, overlap=200, box_threshold=0.5, text_threshold=0.5, text_prompt=None):
         """
         Run the full prediction pipeline, including box generation, outlier rejection, 
         and mask generation.
@@ -67,7 +72,7 @@ class LangRS(LangSAM):
             np.ndarray: Segmentation mask overlay.
         """
 
-        self.generate_boxes()
+        self.generate_boxes(window_size=window_size, overlap=overlap, box_threshold=box_threshold, text_threshold=text_threshold, text_prompt=text_prompt)
         self.outlier_rejection()
         return self.generate_masks(rejection_method=rejection_method)
 
@@ -119,12 +124,15 @@ class LangRS(LangSAM):
 
             self._area_calculator()
 
-            gdf_boxes = convert_bounding_boxes_to_geospatial(
-                        bounding_boxes=self.bounding_boxes,
-                        image_path=self.image_path,
-                        )
-            
-            gdf_boxes.to_file(os.path.join(self.output_path, 'bounding_boxes.shp'))
+            self.outlier_rejection()
+
+            if self.isgeo:
+                gdf_boxes = convert_bounding_boxes_to_geospatial(
+                            bounding_boxes=self.bounding_boxes,
+                            image_path=self.image_path,
+                            )
+                
+                gdf_boxes.to_file(os.path.join(self.output_path, 'bounding_boxes.shp'))
 
             return self.bounding_boxes
 
@@ -180,26 +188,27 @@ class LangRS(LangSAM):
             plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
             plt.close()
 
-            gdf_boxes = convert_bounding_boxes_to_geospatial(
-                        bounding_boxes=self.prediction_boxes,
-                        image_path=self.image_path,
-                        )
-            
-            gdf_boxes.to_file(os.path.join(self.output_path, 'bounding_boxes_filtered.shp'))
+            if self.isgeo:
+                gdf_boxes = convert_bounding_boxes_to_geospatial(
+                            bounding_boxes=self.prediction_boxes,
+                            image_path=self.image_path,
+                            )
+                
+                gdf_boxes.to_file(os.path.join(self.output_path, 'bounding_boxes_filtered.shp'))
 
-            gdf_masks = convert_masks_to_geospatial(
-                masks=self.mask_overlay,
-                image_path=self.image_path,
-            )  
+                gdf_masks = convert_masks_to_geospatial(
+                    masks=self.mask_overlay,
+                    image_path=self.image_path,
+                )  
 
-            gdf_masks.to_file(os.path.join(self.output_path, 'masks.shp'))
+                gdf_masks.to_file(os.path.join(self.output_path, 'masks.shp'))
 
             return self.mask_overlay
 
         except Exception as e:
             raise RuntimeError(f"Error in generate_masks: {e}")
 
-    def outlier_rejection(self):
+    def outlier_rejection(self, method=None):
         """
         Perform outlier detection on detected bounding boxes using multiple statistical and ML methods.
 
@@ -236,8 +245,11 @@ class LangRS(LangSAM):
                 "lof": self.y_pred_lof,
                 "isolation_forest": self.y_pred_iso
             }
-            return self.rejection_methods
-
+            if method is None:
+              return self.rejection_methods
+            else:
+                return self.rejection_methods[method]
+            
         except Exception as e:
             raise RuntimeError(f"Error in outlier_rejection: {e}")
 
