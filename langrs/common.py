@@ -7,8 +7,8 @@ import rasterio
 from samgeo.common import get_crs
 from PIL import Image
 from torchvision.ops import nms
+import torch
 import os
-
 
 def read_image_metadata(image_path):
     """Reads geotransform and CRS from GeoTIFF."""

@@ -59,14 +59,13 @@ class LangRS(LangSAM):
         except Exception as e:
             raise RuntimeError(f"Error initializing LangRS: {e}")
 
-    def predict(self, rejection_method=None, window_size=500, overlap=200, box_threshold=0.5, text_threshold=0.5, text_prompt=None):
+    def predict(self, boxes=None, window_size=500, overlap=200, box_threshold=0.3, text_threshold=0.3, text_prompt=None):
         """
         Run the full prediction pipeline, including box generation, outlier rejection, 
         and mask generation.
 
         Args:
-            rejection_method (str, optional): Name of the outlier rejection method to apply.
-                                            If None, all detected boxes are used.
+            boxes (list[torch.Tensor]): List of bounding boxes to run inference on.
 
         Returns:
             np.ndarray: Segmentation mask overlay.
@@ -74,7 +73,7 @@ class LangRS(LangSAM):
 
         self.generate_boxes(window_size=window_size, overlap=overlap, box_threshold=box_threshold, text_threshold=text_threshold, text_prompt=text_prompt)
         self.outlier_rejection()
-        return self.generate_masks(rejection_method=rejection_method)
+        return self.generate_masks(boxes=boxes)
 
     def generate_boxes(self, window_size=500, overlap=200, box_threshold=0.5, text_threshold=0.5, text_prompt=None):
         """
@@ -156,7 +155,7 @@ class LangRS(LangSAM):
 
         output_path = self.output_path_image_masks
         
-        if boxes:
+        if boxes is not None:
             self.prediction_boxes = boxes
         else:
             self.prediction_boxes = self.bounding_boxes
