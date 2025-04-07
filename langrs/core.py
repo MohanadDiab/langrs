@@ -139,32 +139,24 @@ class LangRS(LangSAM):
         except Exception as e:
             raise RuntimeError(f"Error in generate_boxes: {e}")
 
-    def generate_masks(self, rejection_method=None):
+    def generate_masks(self, boxes: list):
         """
         Generate segmentation masks for detected objects using the SAM model.
 
         Args:
-            rejection_method (str, optional): Name of the outlier rejection method to apply 
-                                            before mask generation. If None, all detected boxes are used.
+            boxes (list[torch.Tensor]): List of bounding boxes to run inference on.
 
         Returns:
             np.ndarray: Overlay mask representing segmented areas.
 
         Raises:
-            KeyError: If the specified rejection method is not recognized.
+            KeyError: If no bounding boxes were provided.
             RuntimeError: If mask generation fails due to an unexpected error.
         """
 
         output_path = self.output_path_image_masks
         
-        if rejection_method:
-            if rejection_method in self.rejection_methods:
-                self.prediction_boxes =  self.rejection_methods[rejection_method]
-                output_path = self.output_path_image_masks.split(".")[0] + f"_{rejection_method}.jpg"
-            else:
-                raise KeyError("The provided rejection method is not recognized")
-        else:
-            self.prediction_boxes = self.bounding_boxes
+        self.prediction_boxes = boxes
         
         try:
             self.boxes_tensor = torch.tensor(np.array(self.prediction_boxes))
@@ -208,7 +200,7 @@ class LangRS(LangSAM):
         except Exception as e:
             raise RuntimeError(f"Error in generate_masks: {e}")
 
-    def outlier_rejection(self, method=None):
+    def outlier_rejection(self, method=None, filter=False):
         """
         Perform outlier detection on detected bounding boxes using multiple statistical and ML methods.
 
@@ -245,6 +237,11 @@ class LangRS(LangSAM):
                 "lof": self.y_pred_lof,
                 "isolation_forest": self.y_pred_iso
             }
+
+            if filter:
+                for method, boxes in self.rejection_methods.copy().items():
+                    self.rejection_methods[method] = apply_nms(boxes)
+
             if method is None:
               return self.rejection_methods
             else:

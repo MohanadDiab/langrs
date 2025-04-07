@@ -36,6 +36,7 @@ keywords = {Foundation models, Multi-modal models, Vision language models, Seman
 
 - **Bounding Box Detection:** Locate objects in remote sensing images with a sliding window approach.
 - **Outlier Detection:** Apply various statistical and machine learning methods to filter out anomalies in the detected objects based on the area of the detected bounding boxes.
+- **Non-Max Suppression** Applies NMS to the input bounding boxes, can reduce accuracy slightly, but greatly increases inference speed and lowers memory usage.
 - **Area Calculation:** Compute and rank bounding boxes by their areas.
 - **Image Segmentation:** Detect and extract objects based on text prompts using LangSAM.
 ---
@@ -57,34 +58,32 @@ Here is an example of how to use the `LangRS` class for remote sensing image seg
 ```python
 from langrs.core import LangRS
 
-def main():
-    # Specify a text prompt to identify objects in the image
-    text_input = "object"
+# The class accepts tif/ RGB images
+text_input = "object.tif" 
 
-    # Path to the input remote sensing image
-    image_input = "path_to_your_tif_file"
+# Path to the input remote sensing image
+image_input = "path_to_your_tif_file"
 
-    # Initialize LangRS with the input image, text prompt, and output directory
-    langrs = LangRS(image_input, text_input, "output_folder")
+# Initialize LangRS with the input image, text prompt, and output directory
+langrs = LangRS(image_input, text_input, "output_folder")
 
-    # Detect bounding boxes using the sliding window approach with example parameters
-    bounding_boxes = langrs.generate_boxes(window_size=600, overlap=300, box_threshold=0.25, text_threshold=0.25)
+# Detect bounding boxes using the sliding window approach with example parameters
+bounding_boxes = langrs.generate_boxes(window_size=600, overlap=300, box_threshold=0.25, text_threshold=0.25)
 
-    # Apply outlier rejection to filter anomalous bounding boxes
-    # This will return a dict with the follwing keys:
-    # ['zscore', 'iqr', 'svm', 'svm_sgd', 'robust_covariance', 'lof', 'isolation_forest']
-    # The value of each key represent the boudning boxes from the previous step with the 
-    # outlier rejection method of the key's name applied to them
-    bboxes_filtered = langrs.outlier_rejection()
+# Apply outlier rejection to filter anomalous bounding boxes
+# This will return a dict with the follwing keys:
+# ['zscore', 'iqr', 'svm', 'svm_sgd', 'robust_covariance', 'lof', 'isolation_forest']
+# The value of each key represent the boudning boxes from the previous step with the 
+# outlier rejection method of the key's name applied to them
+bboxes_filtered = langrs.outlier_rejection()
 
-    # Generate segmentation masks for the filtered bounding boxes of the provided key
-    masks = langrs.generate_masks(rejection_method="zscore")
-    # Or
-    masks = langrs.generate_masks(rejection_method="iqr")
-    
+# Retreive certain bounding boxes 
+bboxes_zscore = bboxes_filtered['zscore']
 
-if __name__ == "__main__":
-    main()
+# Generate segmentation masks for the filtered bounding boxes of the provided key
+masks = langrs.generate_masks(boxes=bounding_boxes)
+# Or
+masks = langrs.generate_masks(boxes=bboxes_zscore)
 ```
 
 ### Input Parameters for LangRS Methods
@@ -104,8 +103,7 @@ if __name__ == "__main__":
 Applies multiple outlier detection methods (e.g., Z-Score, IQR, SVM, LOF) to filter bounding boxes.
 
 #### `generate_masks`:
-- `rejection_method` (str): The method used for filtering outliers. Options include `zscore`, `iqr`, `svm`, `lof`, etc.
-
+- `boxes` (list[torch.tensor]): The input boxes, the model will segment what is inside these boxes only.
 ---
 
 ## Example segmentation

@@ -115,5 +115,6 @@ def plot_bbox(ypred, bboxes, pil_image, output_dir):
 
     ax.axis('off')  # Turn off the axes
     plt.savefig(output_dir, bbox_inches='tight', pad_inches=0)
+    plt.close()
 
     return filtered_bboxes
