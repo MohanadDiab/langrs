@@ -156,7 +156,10 @@ class LangRS(LangSAM):
 
         output_path = self.output_path_image_masks
         
-        self.prediction_boxes = boxes
+        if boxes:
+            self.prediction_boxes = boxes
+        else:
+            self.prediction_boxes = self.bounding_boxes
         
         try:
             self.boxes_tensor = torch.tensor(np.array(self.prediction_boxes))
