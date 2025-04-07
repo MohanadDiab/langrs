@@ -6,6 +6,7 @@ from rasterio.features import shapes
 import rasterio
 from samgeo.common import get_crs
 from PIL import Image
+from torchvision.ops import nms
 import os
 
 
@@ -170,3 +171,8 @@ def load_image(image):
     else:
         raise TypeError("Unsupported image input. Must be file path (str), numpy array, or PIL image.")
         
+def apply_nms(boxes, iou_threshold=0.5):
+    boxes_tensor = torch.tensor(boxes, dtype=torch.float32)
+    scores_tensor = torch.ones(len(boxes))  # Or real scores if you have them
+    indices = nms(boxes_tensor, scores_tensor, iou_threshold)
+    return boxes_tensor[indices]
