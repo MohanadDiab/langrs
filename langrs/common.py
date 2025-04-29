@@ -177,3 +177,30 @@ def apply_nms(boxes, iou_threshold=0.5):
     scores_tensor = torch.ones(len(boxes))  # Or real scores if you have them
     indices = nms(boxes_tensor, scores_tensor, iou_threshold)
     return boxes_tensor[indices]
+
+def apply_nms_areas(boxes, iou_threshold=0.5, inverse_area=False):
+    """
+    Apply Non-Maximum Suppression (NMS) to a list of bounding boxes based on their areas.  
+    Smaller boxes will have higher scores.
+    Args:
+        boxes (list of tuples): List of bounding boxes in the format (xmin, ymin, xmax, ymax).
+        iou_threshold (float): Intersection over Union threshold for NMS.
+        inverse_area (bool): If True, smaller boxes will have higher scores.
+    Returns:
+        list of tuples: Filtered bounding boxes after applying NMS.
+    """
+    boxes_tensor = torch.tensor(boxes, dtype=torch.float32)
+
+    # Compute area for each box: (x2 - x1) * (y2 - y1)
+    areas = (boxes_tensor[:, 2] - boxes_tensor[:, 0]) * (boxes_tensor[:, 3] - boxes_tensor[:, 1])
+
+    if inverse_area:
+        # Invert areas to use as scores (smaller boxes have higher scores) + regularization
+        scores = 1.0 / areas + 1e-6
+    else:
+        # Use areas directly as scores (larger boxes have higher scores)
+        scores = areas
+
+    indices = nms(boxes_tensor, scores, iou_threshold)
+
+    return boxes_tensor[indices]

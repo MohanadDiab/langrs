@@ -1,0 +1,3 @@
+final text_encoder_type: bert-base-uncased
+Filtered boxes: 1318
+Filtered boxes after NMS: 695
