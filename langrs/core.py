@@ -137,6 +137,8 @@ class LangRS(LangSAM):
         except Exception as e:
             raise RuntimeError(f"Error in generate_boxes: {e}")
 
+    #TODO: Mohanad: Update readme.md for the new changes of the window_size and overlap
+    #TODO: Mohanad: no_grad + quantization for both models
     def generate_masks(self, boxes: list = None, window_size=500, overlap=200):
         """
         Generate segmentation masks for detected objects using the SAM model in a tiled approach.

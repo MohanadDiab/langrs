@@ -171,6 +171,7 @@ def load_image(image):
     else:
         raise TypeError("Unsupported image input. Must be file path (str), numpy array, or PIL image.")
         
+# TODO: Mohanad: Update this to be size-aware NMS
 def apply_nms(boxes, iou_threshold=0.5):
     boxes_tensor = torch.tensor(boxes, dtype=torch.float32)
     scores_tensor = torch.ones(len(boxes))  # Or real scores if you have them
