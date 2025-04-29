@@ -44,7 +44,6 @@ class LangRS(LangSAM):
 
             # Define output file paths
             self.output_path_image = os.path.join(self.output_path, 'original_image.jpg')
-            self.output_path_image = os.path.join(self.output_path, 'original_image.jpg')
             self.output_path_image_boxes = os.path.join(self.output_path, 'results_dino.jpg')
             self.output_path_image_masks = os.path.join(self.output_path, 'results_sam.jpg')
             self.output_path_image_areas = os.path.join(self.output_path, 'results_areas.jpg')
@@ -138,63 +137,83 @@ class LangRS(LangSAM):
         except Exception as e:
             raise RuntimeError(f"Error in generate_boxes: {e}")
 
-    def generate_masks(self, boxes: list):
+    def generate_masks(self, boxes: list = None, window_size=500, overlap=200):
         """
-        Generate segmentation masks for detected objects using the SAM model.
+        Generate segmentation masks for detected objects using the SAM model in a tiled approach.
 
         Args:
-            boxes (list[torch.Tensor]): List of bounding boxes to run inference on.
+            boxes (list[torch.Tensor], optional): List of bounding boxes to run inference on.
+            window_size (int, optional): Window size for tiling. Default is 500.
+            overlap (int, optional): Overlap between tiles. Default is 200.
 
         Returns:
             np.ndarray: Overlay mask representing segmented areas.
-
-        Raises:
-            KeyError: If no bounding boxes were provided.
-            RuntimeError: If mask generation fails due to an unexpected error.
         """
 
         output_path = self.output_path_image_masks
-        
+
         if boxes is not None:
             self.prediction_boxes = boxes
         else:
             self.prediction_boxes = self.bounding_boxes
-        
+
         try:
             self.boxes_tensor = torch.tensor(np.array(self.prediction_boxes))
-            self.masks_out = self.predict_sam(image=self.pil_image, boxes=self.boxes_tensor)
-            self.masks = self.masks_out.squeeze(1)
+            
+            # Prepare for windowed prediction
+            windows = self._split_into_windows(self.np_image, window_size, overlap)
+            masks_info = []
 
-            mask_overlay = np.zeros_like(self.np_image[..., 0], dtype=np.uint8)
+            for (x_min, y_min, x_max, y_max) in windows:
+                tile_np = self.np_image[y_min:y_max, x_min:x_max]
+                tile_pil = Image.fromarray(tile_np[:, :, :3])
 
-            for i, (box, mask) in enumerate(zip(self.boxes_tensor, self.masks)):
-                mask = mask.cpu().numpy().astype(np.uint8) if isinstance(mask, torch.Tensor) else mask
-                mask_overlay += ((mask > 0) * (i + 1)).astype(np.uint8)
+                # Select boxes that fall inside this window
+                local_boxes = []
+                for box in self.prediction_boxes:
+                    bx_min, by_min, bx_max, by_max = box
+                    if (bx_min < x_max and bx_max > x_min) and (by_min < y_max and by_max > y_min):
+                        # Adjust box coordinates relative to tile
+                        adj_box = [
+                            max(0, bx_min - x_min),
+                            max(0, by_min - y_min),
+                            min(x_max - x_min, bx_max - x_min),
+                            min(y_max - y_min, by_max - y_min),
+                        ]
+                        local_boxes.append(adj_box)
 
-            self.mask_overlay = (mask_overlay > 0) * 255
+                if local_boxes:
+                    local_boxes_tensor = torch.tensor(local_boxes)
+                    masks = self.predict_sam_tile(tile_pil, local_boxes_tensor)
+
+                    for i in range(len(masks)):
+                        masks_info.append((masks[i], (x_min, y_min, x_max, y_max)))
+
+            if not masks_info:
+                raise RuntimeError("No masks were generated.")
+
+            self.mask_overlay = self._merge_masks_from_windows(
+                masks_info, (self.np_image.shape[0], self.np_image.shape[1])
+            )
 
             fig, ax = plt.subplots()
             ax.imshow(self.np_image)
             ax.imshow(self.mask_overlay, cmap="viridis", alpha=0.4)
-            ax.axis('off')  # Turn off the axes
-
-            # Save the figure with tight bounding box to remove whitespace
+            ax.axis('off')  
             plt.savefig(output_path, bbox_inches='tight', pad_inches=0)
             plt.close()
 
             if self.isgeo:
                 gdf_boxes = convert_bounding_boxes_to_geospatial(
-                            bounding_boxes=self.prediction_boxes,
-                            image_path=self.image_path,
-                            )
-                
+                    bounding_boxes=self.prediction_boxes,
+                    image_path=self.image_path,
+                )
                 gdf_boxes.to_file(os.path.join(self.output_path, 'bounding_boxes_filtered.shp'))
 
                 gdf_masks = convert_masks_to_geospatial(
                     masks=self.mask_overlay,
                     image_path=self.image_path,
-                )  
-
+                )
                 gdf_masks.to_file(os.path.join(self.output_path, 'masks.shp'))
 
             return self.mask_overlay
@@ -387,3 +406,79 @@ class LangRS(LangSAM):
 
         except Exception as e:
             raise RuntimeError(f"Error in _localize_bounding_boxes: {e}")
+
+    def _split_into_windows(self, image_np, window_size, overlap):
+        """
+        Splits the image into overlapping windows.
+
+        Args:
+            image_np (np.array): Full image as numpy array.
+            window_size (int): Size of each window (square assumed).
+            overlap (int): Number of pixels overlap between windows.
+
+        Returns:
+            List of tuples: (x_min, y_min, x_max, y_max) for each window.
+        """
+        h, w, _ = image_np.shape
+        windows = []
+        step = window_size - overlap
+
+        for y in range(0, h, step):
+            for x in range(0, w, step):
+                x_min = x
+                y_min = y
+                x_max = min(x + window_size, w)
+                y_max = min(y + window_size, h)
+                windows.append((x_min, y_min, x_max, y_max))
+
+        return windows
+    
+    def _merge_masks_from_windows(self, masks_info, full_size):
+        """
+        Merge the masks from windows into a full-size mask.
+
+        Args:
+            masks_info (list): List of tuples (mask, (x_min, y_min, x_max, y_max)).
+            full_size (tuple): Full image size (height, width).
+
+        Returns:
+            np.ndarray: Full merged mask.
+        """
+        merged_mask = np.zeros(full_size, dtype=np.uint8)
+
+        for idx, (mask, (x_min, y_min, x_max, y_max)) in enumerate(masks_info):
+            if isinstance(mask, torch.Tensor):
+                mask = mask.numpy()
+            mask = mask.squeeze()
+            mask_resized = np.zeros((y_max - y_min, x_max - x_min), dtype=np.uint8)
+            mask_resized[mask > 0] = 255  # Binary mask
+            
+            merged_mask[y_min:y_max, x_min:x_max] = np.maximum(
+                merged_mask[y_min:y_max, x_min:x_max], mask_resized
+            )
+
+        return merged_mask
+
+    def predict_sam_tile(self, image_tile, boxes):
+        """
+        Run the SAM model prediction on a tile.
+
+        Args:
+            image_tile (PIL.Image): Image tile.
+            boxes (torch.Tensor): Bounding boxes relative to the tile.
+
+        Returns:
+            Masks tensor.
+        """
+        image_array = np.asarray(image_tile)
+        self.sam.set_image(image_array)
+        transformed_boxes = self.sam.transform.apply_boxes_torch(
+            boxes, image_array.shape[:2]
+        )
+        masks, _, _ = self.sam.predict_torch(
+            point_coords=None,
+            point_labels=None,
+            boxes=transformed_boxes.to(self.sam.device),
+            multimask_output=False,
+        )
+        return masks.cpu()
