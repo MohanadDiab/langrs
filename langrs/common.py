@@ -3,12 +3,11 @@ import numpy as np
 import geopandas as gpd
 from shapely.geometry import Polygon, shape
 from rasterio.features import shapes
-import rasterio
-from samgeo.common import get_crs
 from PIL import Image
 from torchvision.ops import nms
 import torch
 import os
+from langrs.geospatial.converter import get_crs
 
 def read_image_metadata(image_path):
     """Reads geotransform and CRS from GeoTIFF."""
