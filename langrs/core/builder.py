@@ -21,7 +21,7 @@ from ..io.output_manager import OutputManager
 from ..utils.exceptions import ModelLoadError
 
 
-class LangRSPipelineBuilder:
+class LangRSBuilder:
     """
     Builder for creating LangRS pipeline instances.
     
@@ -39,7 +39,7 @@ class LangRSPipelineBuilder:
         self.output_path: str = "output"
         self.create_timestamped: bool = True
 
-    def with_config(self, config: LangRSConfig) -> "LangRSPipelineBuilder":
+    def with_config(self, config: LangRSConfig) -> "LangRSBuilder":
         """
         Set configuration.
         
@@ -54,7 +54,7 @@ class LangRSPipelineBuilder:
 
     def with_detection_model(
         self, model_name: str, model_path: Optional[str] = None
-    ) -> "LangRSPipelineBuilder":
+    ) -> "LangRSBuilder":
         """
         Set detection model.
         
@@ -71,7 +71,7 @@ class LangRSPipelineBuilder:
 
     def with_segmentation_model(
         self, model_name: str, model_path: Optional[str] = None
-    ) -> "LangRSPipelineBuilder":
+    ) -> "LangRSBuilder":
         """
         Set segmentation model.
         
@@ -86,7 +86,7 @@ class LangRSPipelineBuilder:
         self.segmentation_model_path = model_path
         return self
 
-    def with_device(self, device: str) -> "LangRSPipelineBuilder":
+    def with_device(self, device: str) -> "LangRSBuilder":
         """
         Set device for models.
         
@@ -101,7 +101,7 @@ class LangRSPipelineBuilder:
 
     def with_output_path(
         self, output_path: str, create_timestamped: bool = True
-    ) -> "LangRSPipelineBuilder":
+    ) -> "LangRSBuilder":
         """
         Set output path.
         
@@ -189,12 +189,12 @@ class LangRSPipelineBuilder:
         }
 
         return LangRS(
-            detection_model=detection_model,
-            segmentation_model=segmentation_model,
-            image_loader=image_loader,
-            tiling_strategy=tiling_strategy,
-            outlier_detectors=outlier_detectors,
-            visualizer=visualizer,
-            output_manager=output_manager,
+            _detection_model_instance=detection_model,
+            _segmentation_model_instance=segmentation_model,
+            _image_loader=image_loader,
+            _tiling_strategy=tiling_strategy,
+            _outlier_detectors=outlier_detectors,
+            _visualizer=visualizer,
+            _output_manager=output_manager,
             config=self.config,
         )

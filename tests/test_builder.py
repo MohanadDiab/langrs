@@ -3,24 +3,24 @@
 import pytest
 import tempfile
 
-from langrs.core.builder import LangRSPipelineBuilder
+from langrs.core.builder import LangRSBuilder
 from langrs.core.config import LangRSConfig
 from langrs.utils.exceptions import ModelLoadError
 
 
-class TestLangRSPipelineBuilder:
-    """Test LangRSPipelineBuilder class."""
+class TestLangRSBuilder:
+    """Test LangRSBuilder class."""
 
     def test_initialization(self):
         """Test builder initialization."""
-        builder = LangRSPipelineBuilder()
+        builder = LangRSBuilder()
         assert builder.detection_model_name == "grounding_dino"
         assert builder.segmentation_model_name == "sam"
         assert builder.output_path == "output"
 
     def test_with_config(self):
         """Test setting configuration."""
-        builder = LangRSPipelineBuilder()
+        builder = LangRSBuilder()
         config = LangRSConfig()
         config.detection.box_threshold = 0.5
         
@@ -30,7 +30,7 @@ class TestLangRSPipelineBuilder:
 
     def test_with_detection_model(self):
         """Test setting detection model."""
-        builder = LangRSPipelineBuilder()
+        builder = LangRSBuilder()
         builder.with_detection_model("grounding_dino", model_path="path.pth")
         
         assert builder.detection_model_name == "grounding_dino"
@@ -38,7 +38,7 @@ class TestLangRSPipelineBuilder:
 
     def test_with_segmentation_model(self):
         """Test setting segmentation model."""
-        builder = LangRSPipelineBuilder()
+        builder = LangRSBuilder()
         builder.with_segmentation_model("sam", model_path="path.pth")
         
         assert builder.segmentation_model_name == "sam"
@@ -46,14 +46,14 @@ class TestLangRSPipelineBuilder:
 
     def test_with_device(self):
         """Test setting device."""
-        builder = LangRSPipelineBuilder()
+        builder = LangRSBuilder()
         builder.with_device("cpu")
         
         assert builder.device == "cpu"
 
     def test_with_output_path(self):
         """Test setting output path."""
-        builder = LangRSPipelineBuilder()
+        builder = LangRSBuilder()
         builder.with_output_path("custom_output", create_timestamped=False)
         
         assert builder.output_path == "custom_output"
@@ -62,7 +62,7 @@ class TestLangRSPipelineBuilder:
     def test_fluent_interface(self):
         """Test fluent interface (method chaining)."""
         builder = (
-            LangRSPipelineBuilder()
+            LangRSBuilder()
             .with_device("cpu")
             .with_output_path("test_output")
             .with_detection_model("grounding_dino")
@@ -75,7 +75,7 @@ class TestLangRSPipelineBuilder:
     def test_build_creates_pipeline(self):
         """Test building pipeline."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            builder = LangRSPipelineBuilder().with_output_path(tmpdir, create_timestamped=False)
+            builder = LangRSBuilder().with_output_path(tmpdir, create_timestamped=False)
             
             try:
                 pipeline = builder.build()
@@ -89,7 +89,7 @@ class TestLangRSPipelineBuilder:
     def test_build_uses_default_config(self):
         """Test that build uses default config if not set."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            builder = LangRSPipelineBuilder().with_output_path(tmpdir, create_timestamped=False)
+            builder = LangRSBuilder().with_output_path(tmpdir, create_timestamped=False)
             
             try:
                 pipeline = builder.build()
@@ -101,7 +101,7 @@ class TestLangRSPipelineBuilder:
     def test_build_creates_all_components(self):
         """Test that build creates all required components."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            builder = LangRSPipelineBuilder().with_output_path(tmpdir, create_timestamped=False)
+            builder = LangRSBuilder().with_output_path(tmpdir, create_timestamped=False)
             
             try:
                 pipeline = builder.build()

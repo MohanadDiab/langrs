@@ -6,7 +6,7 @@ from PIL import Image
 import tempfile
 from pathlib import Path
 
-from langrs import LangRS, LangRSPipelineBuilder, LangRSConfig
+from langrs import LangRS, LangRSBuilder, LangRSConfig
 from langrs.models.base import DetectionModel, SegmentationModel
 from langrs.processing.image_loader import ImageLoader
 from langrs.processing.tiling import SlidingWindowTiler

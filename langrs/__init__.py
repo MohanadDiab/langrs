@@ -41,7 +41,7 @@ from .io.output_manager import OutputManager
 # Phase 4: Core pipeline
 from .core.config import LangRSConfig
 from .core.pipeline import LangRS
-from .core.builder import LangRSPipelineBuilder
+from .core.builder import LangRSBuilder
 from .models.factory import ModelFactory
 
 # Utilities

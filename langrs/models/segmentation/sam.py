@@ -123,23 +123,50 @@ class SAMSegmenter(SegmentationModel):
                     self.model_variant, self.MODEL_VARIANTS[self.DEFAULT_VARIANT]
                 )
 
-                # Try Hugging Face first
-                try:
-                    checkpoint_path = hf_hub_download(
-                        repo_id=variant_info["repo_id"],
-                        filename=variant_info["checkpoint"],
-                        cache_dir=self.cache_dir,
-                    )
-                except Exception:
-                    # Fallback to direct download
-                    import urllib.request
-                    checkpoint_path = os.path.join(
-                        self.cache_dir, variant_info["checkpoint"]
-                    )
-                    if not os.path.exists(checkpoint_path):
-                        print(f"Downloading {variant_info['checkpoint']} from {variant_info['url']}")
-                        os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
+                # Try direct download from official URL (more reliable)
+                import urllib.request
+                checkpoint_path = os.path.join(
+                    self.cache_dir, variant_info["checkpoint"]
+                )
+                
+                # Check if file exists and is valid
+                file_valid = False
+                if os.path.exists(checkpoint_path):
+                    try:
+                        # Try to load a small part to verify it's not corrupted
+                        import torch
+                        with open(checkpoint_path, 'rb') as f:
+                            # Check file size (should be > 100MB for SAM models)
+                            file_size = os.path.getsize(checkpoint_path)
+                            if file_size > 100 * 1024 * 1024:  # > 100MB
+                                # Try to read the file header
+                                header = f.read(1024)
+                                if len(header) == 1024:
+                                    file_valid = True
+                    except Exception:
+                        file_valid = False
+                
+                if not file_valid:
+                    # Download from official URL
+                    print(f"Downloading SAM model {variant_info['checkpoint']} from official source...")
+                    print(f"This may take a few minutes (file is ~2.4GB for vit_h)...")
+                    os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
+                    try:
                         urllib.request.urlretrieve(variant_info["url"], checkpoint_path)
+                        print(f"Download complete: {checkpoint_path}")
+                    except Exception as e:
+                        # Try Hugging Face as fallback
+                        try:
+                            checkpoint_path = hf_hub_download(
+                                repo_id=variant_info["repo_id"],
+                                filename=variant_info["checkpoint"],
+                                cache_dir=self.cache_dir,
+                                force_download=True,  # Force re-download if corrupted
+                            )
+                        except Exception:
+                            raise ModelLoadError(
+                                f"Failed to download SAM model from both official URL and Hugging Face: {e}"
+                            )
             else:
                 checkpoint_path = model_path
                 if not os.path.exists(checkpoint_path):

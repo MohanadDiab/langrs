@@ -43,7 +43,7 @@ class GroundingDINODetector(DetectionModel):
             "repo_id": "ShilongLiu/GroundingDINO",
         },
         "swint_ogc": {
-            "config": "GroundingDINO_SwinT.cfg.py",
+            "config": "GroundingDINO_SwinT_OGC.cfg.py",
             "checkpoint": "groundingdino_swint_ogc.pth",
             "repo_id": "ShilongLiu/GroundingDINO",
         },
@@ -133,9 +133,7 @@ class GroundingDINODetector(DetectionModel):
                 )
 
                 # Load model
-                args = SLConfig.fromfile(config_path)
-                args.device = str(self._device)
-                self._model = load_model(args, checkpoint_path, device=str(self._device))
+                self._model = load_model(config_path, checkpoint_path, device=str(self._device))
             else:
                 # Load from local path
                 if not os.path.exists(model_path):
@@ -154,9 +152,7 @@ class GroundingDINODetector(DetectionModel):
                         cache_dir=self.cache_dir,
                     )
 
-                args = SLConfig.fromfile(config_path)
-                args.device = str(self._device)
-                self._model = load_model(args, model_path, device=str(self._device))
+                self._model = load_model(config_path, model_path, device=str(self._device))
 
             self._model.eval()
             self._loaded = True
@@ -201,8 +197,20 @@ class GroundingDINODetector(DetectionModel):
             # Convert PIL to numpy for groundingdino
             image_np = np.array(pil_image.convert("RGB"))
 
-            # Load and transform image
-            image_source, image = load_image(image_np)
+            # load_image expects a file path, but we have a numpy array
+            # So we'll use the image directly and apply transforms manually
+            image_source = pil_image.convert("RGB")
+            # Apply the same transforms that load_image would apply
+            transform = T.Compose(
+                [
+                    T.RandomResize([800], max_size=1333),
+                    T.ToTensor(),
+                    T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+                ]
+            )
+            image, _ = transform(image_source, None)
+            # Ensure image tensor is on the correct device
+            image = image.to(self._device)
 
             # Run prediction with no_grad for inference performance
             with torch.no_grad():
@@ -212,6 +220,7 @@ class GroundingDINODetector(DetectionModel):
                     caption=text_prompt,
                     box_threshold=box_threshold,
                     text_threshold=text_threshold,
+                    device=str(self._device),  # Explicitly pass device to avoid CUDA default
                 )
 
             # Convert boxes to (x_min, y_min, x_max, y_max) format

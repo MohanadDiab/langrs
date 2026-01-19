@@ -93,9 +93,9 @@ class LangRS:
             self.config = config or LangRSConfig()
         else:
             # Use builder for simple initialization
-            from .builder import LangRSPipelineBuilder
+            from .builder import LangRSBuilder
             
-            builder = LangRSPipelineBuilder()
+            builder = LangRSBuilder()
             if config:
                 builder.with_config(config)
             if device:

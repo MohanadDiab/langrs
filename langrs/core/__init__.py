@@ -8,7 +8,7 @@ from .config import (
     VisualizationConfig,
 )
 from .pipeline import LangRS
-from .builder import LangRSPipelineBuilder
+from .builder import LangRSBuilder
 
 __all__ = [
     "LangRSConfig",
@@ -17,5 +17,5 @@ __all__ = [
     "OutlierDetectionConfig",
     "VisualizationConfig",
     "LangRS",
-    "LangRSPipelineBuilder",
+    "LangRSBuilder",
 ]

@@ -19,7 +19,7 @@ setup(
     name="langrs",
     version="2.0.0",  # Major version bump for refactored architecture
     author="Mohanad Diab",
-    author_email="mdiab@eurac.edu",
+    author_email="mohanad.y.diab@gmail.com",
     description="A modern, extensible Python package for zero-shot segmentation of aerial images using GroundingDINO and SAM",
     long_description=long_description,
     long_description_content_type="text/markdown",
