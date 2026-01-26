@@ -25,7 +25,7 @@ print("Test 1: Direct RexOmniDetector instantiation")
 print("=" * 60)
 
 try:
-    detector = RexOmniDetector(device="cpu")
+    detector = RexOmniDetector(device="gpu")
     print("[OK] Detector created successfully")
     print(f"  - Device: {detector.device}")
     print(f"  - Backend: {detector.backend}")
@@ -43,7 +43,7 @@ print("=" * 60)
 try:
     detector2 = ModelFactory.create_detection_model(
         model_name="rex_omni",
-        device="cpu",
+        device="gpu",
     )
     print("[OK] Detector created via ModelFactory")
     assert isinstance(detector2, RexOmniDetector)
@@ -69,7 +69,7 @@ except Exception as e:
     if "flash_attn" in error_msg.lower() or "flash_attention" in error_msg.lower():
         print(f"[WARNING] FlashAttention not available, retrying with sdpa...")
         # Retry with explicit sdpa
-        detector2 = RexOmniDetector(device="cpu", attn_implementation="sdpa")
+        detector2 = RexOmniDetector(device="gpu", attn_implementation="sdpa")
         try:
             detector2.load_weights()
             detector = detector2  # Use the working detector
