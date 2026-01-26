@@ -108,7 +108,20 @@ boxes2 = detector2.detect(
     text_threshold=0.3,
 )
 
-print(f"Found {len(boxes2)} boxes with prompt 'object'")
+print(f"\nDetection results:")
+print(f"  - Found {len(boxes2)} boxes with prompt 'object'")
+if boxes2:
+    print(f"  - First box: {boxes2[0]}")
+    print(f"  - Box format: (x_min, y_min, x_max, y_max)")
+    print(f"  - Showing first 5 boxes:")
+    for i, box in enumerate(boxes2[:5]):
+        x_min, y_min, x_max, y_max = box
+        width = x_max - x_min
+        height = y_max - y_min
+        print(f"    Box {i+1}: ({x_min:.1f}, {y_min:.1f}, {x_max:.1f}, {y_max:.1f}) "
+              f"[W: {width:.1f}, H: {height:.1f}]")
+else:
+    print("  - No objects detected")
 
 # Example 3: Custom configuration with generation parameters
 print("\n" + "=" * 60)
@@ -158,6 +171,9 @@ except Exception as e:
 print("\n" + "=" * 60)
 print("Example complete!")
 print("=" * 60)
+print("\nSummary:")
+print(f"  - Example 1: Found {len(boxes)} boxes with prompt 'building, roof, house'")
+print(f"  - Example 2: Found {len(boxes2)} boxes with prompt 'object'")
 print("\nKey differences from GroundingDINO:")
 print("  - Rex-Omni doesn't use confidence thresholds (box_threshold/text_threshold are ignored)")
 print("  - Detection quality is controlled by generation parameters (temperature, top_p, top_k)")
@@ -170,3 +186,5 @@ print("  - For best results, use specific, descriptive prompts")
 print("  - Rex-Omni works well with natural language descriptions")
 print("  - If FlashAttention errors occur, the model automatically falls back to SDPA")
 print("  - For GPU compatibility issues (e.g., B200), use device='cpu'")
+print("  - Note: The prompt 'object' is very generic and may return many detections")
+print("  - Try more specific prompts like 'building', 'car', 'tree' for better results")
