@@ -20,7 +20,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from PIL import Image
-from langrs import RexOmniDetector, ModelFactory
+from langrs import RexOmniDetector, ModelFactory, OutputManager, MatplotlibVisualizer
 
 # Set up cache directory outside home directory (to avoid "No space left on device" errors)
 # Use environment variable if set, otherwise use a location with more space
@@ -37,6 +37,12 @@ print(f"Using cache directory: {cache_dir}")
 # Can override with DEVICE environment variable
 device = os.environ.get("DEVICE", "cpu")  # Default to CPU for compatibility
 print(f"Using device: {device}")
+
+# Set up output directory for saving visualizations
+output_dir = "output/rex_omni_example"
+output_manager = OutputManager(output_dir, create_timestamped=True)
+visualizer = MatplotlibVisualizer(figsize=(15, 15), dpi=100)
+print(f"Output directory: {output_manager.output_dir}")
 
 # Example 1: Basic usage with default settings
 print("=" * 60)
@@ -82,6 +88,11 @@ if boxes:
         height = y_max - y_min
         print(f"    Box {i+1}: ({x_min:.1f}, {y_min:.1f}, {x_max:.1f}, {y_max:.1f}) "
               f"[W: {width:.1f}, H: {height:.1f}]")
+    
+    # Save visualization
+    output_path = output_manager.get_path_str("example1_detections.jpg")
+    visualizer.plot_boxes(image, boxes, output_path, box_color="red", linewidth=2)
+    print(f"\n  ✓ Saved visualization to: {output_path}")
 else:
     print("  - No objects detected")
 
@@ -120,6 +131,11 @@ if boxes2:
         height = y_max - y_min
         print(f"    Box {i+1}: ({x_min:.1f}, {y_min:.1f}, {x_max:.1f}, {y_max:.1f}) "
               f"[W: {width:.1f}, H: {height:.1f}]")
+    
+    # Save visualization
+    output_path = output_manager.get_path_str("example2_detections.jpg")
+    visualizer.plot_boxes(image, boxes2, output_path, box_color="blue", linewidth=2)
+    print(f"\n  ✓ Saved visualization to: {output_path}")
 else:
     print("  - No objects detected")
 
@@ -171,6 +187,7 @@ except Exception as e:
 print("\n" + "=" * 60)
 print("Example complete!")
 print("=" * 60)
+print(f"\nAll output files saved to: {output_manager.output_dir}")
 print("\nSummary:")
 print(f"  - Example 1: Found {len(boxes)} boxes with prompt 'building, roof, house'")
 print(f"  - Example 2: Found {len(boxes2)} boxes with prompt 'object'")

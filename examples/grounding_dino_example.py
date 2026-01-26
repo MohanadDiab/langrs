@@ -16,7 +16,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from PIL import Image
-from langrs import GroundingDINODetector, ModelFactory
+from langrs import GroundingDINODetector, ModelFactory, OutputManager, MatplotlibVisualizer
 
 # Example 1: Basic usage with default settings
 print("=" * 60)
@@ -62,6 +62,11 @@ if boxes:
         height = y_max - y_min
         print(f"    Box {i+1}: ({x_min:.1f}, {y_min:.1f}, {x_max:.1f}, {y_max:.1f}) "
               f"[W: {width:.1f}, H: {height:.1f}]")
+    
+    # Save visualization
+    output_path = output_manager.get_path_str("example1_detections.jpg")
+    visualizer.plot_boxes(image, boxes, output_path, box_color="red", linewidth=2)
+    print(f"\n  ✓ Saved visualization to: {output_path}")
 else:
     print("  - No objects detected")
 
@@ -87,7 +92,13 @@ boxes2 = detector2.detect(
     text_threshold=0.3,
 )
 
-print(f"Found {len(boxes2)} boxes with higher threshold")
+print(f"\nDetection results:")
+print(f"  - Found {len(boxes2)} boxes with higher threshold")
+if boxes2:
+    # Save visualization
+    output_path = output_manager.get_path_str("example2_detections.jpg")
+    visualizer.plot_boxes(image, boxes2, output_path, box_color="blue", linewidth=2)
+    print(f"  ✓ Saved visualization to: {output_path}")
 
 # Example 3: Custom model path and variant
 print("\n" + "=" * 60)
@@ -108,6 +119,7 @@ for variant in GroundingDINODetector.MODEL_VARIANTS.keys():
 print("\n" + "=" * 60)
 print("Example complete!")
 print("=" * 60)
+print(f"\nAll output files saved to: {output_manager.output_dir}")
 print("\nTips:")
 print("  - Lower thresholds (0.2-0.25) = more detections, may include false positives")
 print("  - Higher thresholds (0.3-0.4) = fewer but more confident detections")
