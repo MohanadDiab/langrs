@@ -1,12 +1,17 @@
 """Detection model implementations."""
 
-from .grounding_dino import GroundingDINODetector
+try:
+    from .grounding_dino import GroundingDINODetector
+except (ImportError, AttributeError, ModuleNotFoundError):
+    GroundingDINODetector = None
 
 try:
     from .rex_omni import RexOmniDetector
-except ImportError:
+except (ImportError, AttributeError, ModuleNotFoundError):
     RexOmniDetector = None
 
-__all__ = ["GroundingDINODetector"]
+__all__ = []
+if GroundingDINODetector is not None:
+    __all__.append("GroundingDINODetector")
 if RexOmniDetector is not None:
     __all__.append("RexOmniDetector")

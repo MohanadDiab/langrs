@@ -7,19 +7,19 @@ from .registry import ModelRegistry
 try:
     from .detection.grounding_dino import GroundingDINODetector
     ModelRegistry.register_detection("grounding_dino")(GroundingDINODetector)
-except ImportError:
+except (ImportError, AttributeError, ModuleNotFoundError):
     pass
 
 try:
     from .detection.rex_omni import RexOmniDetector
     ModelRegistry.register_detection("rex_omni")(RexOmniDetector)
-except ImportError:
+except (ImportError, AttributeError, ModuleNotFoundError):
     pass
 
 try:
     from .segmentation.sam import SAMSegmenter
     ModelRegistry.register_segmentation("sam")(SAMSegmenter)
-except ImportError:
+except (ImportError, AttributeError, ModuleNotFoundError):
     pass
 
 __all__ = [

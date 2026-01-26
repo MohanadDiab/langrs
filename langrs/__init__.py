@@ -14,17 +14,17 @@ from .models.registry import ModelRegistry
 # Phase 2: Model implementations
 try:
     from .models.detection.grounding_dino import GroundingDINODetector
-except ImportError:
+except (ImportError, AttributeError, ModuleNotFoundError):
     GroundingDINODetector = None
 
 try:
     from .models.detection.rex_omni import RexOmniDetector
-except ImportError:
+except (ImportError, AttributeError, ModuleNotFoundError):
     RexOmniDetector = None
 
 try:
     from .models.segmentation.sam import SAMSegmenter
-except ImportError:
+except (ImportError, AttributeError, ModuleNotFoundError):
     SAMSegmenter = None
 
 # Phase 3: Processing, visualization, I/O
