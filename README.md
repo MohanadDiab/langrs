@@ -37,7 +37,7 @@ LangRS is a Python package for remote sensing image segmentation that combines a
 - **Outlier Detection:** Apply various statistical and machine learning methods to filter out anomalies in the detected objects based on the area of the detected bounding boxes.
 - **Non-Max Suppression:** Applies NMS to the input bounding boxes, can reduce accuracy slightly, but greatly increases inference speed and lowers memory usage.
 - **Area Calculation:** Compute and rank bounding boxes by their areas.
-- **Image Segmentation:** Detect and extract objects based on text prompts using GroundingDINO and SAM.
+- **Image Segmentation:** Detect and extract objects based on text prompts using GroundingDINO, Rex-Omni, or SAM.
 - **Modern Architecture:** Built with SOLID principles, dependency injection, and abstract base classes for easy extension.
 - **Geospatial Support:** Automatic CRS extraction and shapefile export for bounding boxes and masks.
 
@@ -132,11 +132,49 @@ langrs = LangRS(
 masks = langrs.run_full_pipeline("path_to_your_tif_file", "roof")
 ```
 
+### Using Different Detection Models
+
+LangRS supports multiple detection models. You can use **GroundingDINO** (default) or **Rex-Omni**:
+
+```python
+from langrs import LangRS, ModelFactory
+
+# Option 1: Use Rex-Omni via LangRS
+langrs = LangRS(
+    output_path="output",
+    detection_model="rex_omni",  # Use Rex-Omni instead of GroundingDINO
+    device="cpu",
+)
+
+# Option 2: Create custom Rex-Omni detector
+from langrs import RexOmniDetector
+
+detector = RexOmniDetector(
+    model_variant="default",  # or "awq" for quantized version
+    backend="transformers",    # or "vllm" for faster inference
+    device="cpu",
+)
+detector.load_weights()  # Downloads from Hugging Face
+
+# Use with LangRS
+langrs = LangRS(
+    output_path="output",
+    _detection_model_instance=detector,
+)
+```
+
+**Note on Rex-Omni:**
+- Rex-Omni is a 3B-parameter MLLM that performs detection via next-token prediction
+- Requires additional dependencies: `transformers`, `qwen-vl-utils`, `accelerate`, `huggingface_hub`
+- Does not use `box_threshold` and `text_threshold` (no confidence scores)
+- Detection quality is controlled by generation parameters (temperature, top_p, top_k)
+- Supports both full model and AWQ quantized versions
+
 ### Input Parameters
 
 #### `LangRS()` Initialization:
 - `output_path`: Directory to save output files
-- `detection_model`: Name of detection model (default: "grounding_dino")
+- `detection_model`: Name of detection model ("grounding_dino" or "rex_omni", default: "grounding_dino")
 - `segmentation_model`: Name of segmentation model (default: "sam")
 - `device`: Device to use ('cpu' or 'cuda', default: auto-detect)
 - `config`: Optional LangRSConfig object

@@ -11,3 +11,13 @@ groundingdino-py==0.4.0
 PyYAML>=6.0
 pytest>=7.0.0
 pytest-cov>=4.0.0
+
+# Rex-Omni dependencies (optional - only needed if using rex_omni detection model)
+# Install with: pip install transformers qwen-vl-utils accelerate huggingface_hub
+transformers>=4.51.0
+qwen-vl-utils>=0.0.14  # Package name: qwen-vl-utils, import: qwen_vl_utils
+accelerate>=1.10.0
+huggingface_hub>=0.20.0
+# flash-attn is optional but recommended for better performance
+# Note: flash-attn requires special installation and may not work on all systems
+# Install separately if needed: pip install flash-attn --no-build-isolation

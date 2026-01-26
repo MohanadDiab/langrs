@@ -148,6 +148,12 @@ output/
 *.ckpt
 *.safetensors
 
+# Hugging Face model cache (typically in ~/.cache/huggingface, but if local)
+models/
+*.bin
+config.json
+tokenizer.json
+
 # Temporary files
 *.tmp
 *.temp

@@ -18,6 +18,11 @@ except ImportError:
     GroundingDINODetector = None
 
 try:
+    from .models.detection.rex_omni import RexOmniDetector
+except ImportError:
+    RexOmniDetector = None
+
+try:
     from .models.segmentation.sam import SAMSegmenter
 except ImportError:
     SAMSegmenter = None
@@ -68,6 +73,7 @@ __all__ = [
     "ModelRegistry",
     "ModelFactory",
     "GroundingDINODetector",
+    "RexOmniDetector",
     "SAMSegmenter",
     # Processing
     "ImageLoader",

@@ -89,6 +89,12 @@ class MyDetectionModel(DetectionModel):
     pass
 ```
 
+**Reference Implementation**: See `langrs/models/detection/rex_omni.py` for a complete example of integrating a detection model (Rex-Omni) that:
+- Downloads models from Hugging Face
+- Supports multiple backends (transformers, vllm)
+- Handles optional dependencies gracefully
+- Converts output formats to LangRS standard
+
 ### Adding a New Segmentation Model
 
 1. Create model class in `langrs/models/segmentation/`

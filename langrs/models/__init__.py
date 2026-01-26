@@ -11,6 +11,12 @@ except ImportError:
     pass
 
 try:
+    from .detection.rex_omni import RexOmniDetector
+    ModelRegistry.register_detection("rex_omni")(RexOmniDetector)
+except ImportError:
+    pass
+
+try:
     from .segmentation.sam import SAMSegmenter
     ModelRegistry.register_segmentation("sam")(SAMSegmenter)
 except ImportError:
