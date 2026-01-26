@@ -14,18 +14,31 @@ from .models.registry import ModelRegistry
 # Phase 2: Model implementations
 try:
     from .models.detection.grounding_dino import GroundingDINODetector
-except (ImportError, AttributeError, ModuleNotFoundError):
+except (ImportError, AttributeError, ModuleNotFoundError) as e:
     GroundingDINODetector = None
+    import warnings
+    warnings.warn(f"GroundingDINO not available: {e}", ImportWarning)
 
 try:
-    from .models.detection.rex_omni import RexOmniDetector
-except (ImportError, AttributeError, ModuleNotFoundError):
+    # Try importing from the detection module's __init__.py first
+    # This uses the error handling already in place there
+    from .models.detection import RexOmniDetector
+    if RexOmniDetector is None:
+        # If it's None from __init__.py, try direct import to see the error
+        from .models.detection.rex_omni import RexOmniDetector
+except Exception as e:
     RexOmniDetector = None
+    import warnings
+    # Only warn for import-related errors, silently ignore others to avoid spam
+    if isinstance(e, (ImportError, AttributeError, ModuleNotFoundError)):
+        warnings.warn(f"RexOmniDetector not available: {e}", ImportWarning)
 
 try:
     from .models.segmentation.sam import SAMSegmenter
-except (ImportError, AttributeError, ModuleNotFoundError):
+except (ImportError, AttributeError, ModuleNotFoundError) as e:
     SAMSegmenter = None
+    import warnings
+    warnings.warn(f"SAMSegmenter not available: {e}", ImportWarning)
 
 # Phase 3: Processing, visualization, I/O
 from .processing.image_loader import ImageLoader, ImageData

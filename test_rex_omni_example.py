@@ -3,6 +3,22 @@
 from PIL import Image
 from langrs import RexOmniDetector, ModelFactory
 
+# Check if RexOmniDetector is available
+if RexOmniDetector is None:
+    print("=" * 60)
+    print("ERROR: RexOmniDetector is not available")
+    print("=" * 60)
+    print("This usually means there was an import error.")
+    print("Trying to import directly to see the error...")
+    try:
+        from langrs.models.detection.rex_omni import RexOmniDetector as DirectRexOmni
+        print("Direct import successful!")
+    except Exception as e:
+        print(f"Direct import failed with error: {e}")
+        import traceback
+        traceback.print_exc()
+    exit(1)
+
 # Test 1: Direct instantiation
 print("=" * 60)
 print("Test 1: Direct RexOmniDetector instantiation")
