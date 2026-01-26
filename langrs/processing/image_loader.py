@@ -105,10 +105,6 @@ class ImageLoader:
             # Transpose from (C, H, W) to (H, W, C)
             np_image = np.transpose(rgb_image, (1, 2, 0))
             pil_image = Image.fromarray(np_image.astype(np.uint8))
-            
-            # Import get_crs here to avoid circular import
-            from ..geospatial.converter import get_crs
-            source_crs = get_crs(image_path)  # Use the utility function
 
         elif ext in [".jpg", ".jpeg", ".png"]:
             # Load regular image

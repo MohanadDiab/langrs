@@ -3,6 +3,7 @@ matplotlib==3.10.0
 Pillow==11.0.0
 rasterio==1.4.3
 torch==2.5.1
+torchvision>=0.16.0
 scikit-learn==1.6.0
 scipy==1.14.1
 segment-anything-py==1.0.1

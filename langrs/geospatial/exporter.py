@@ -1,6 +1,6 @@
 """Geospatial data export utilities."""
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import numpy as np
 import geopandas as gpd
 from shapely.geometry import Polygon, shape
@@ -11,8 +11,16 @@ from pathlib import Path
 from ..utils.types import BoundingBox
 
 
-def read_image_metadata(image_path: str):
-    """Read geotransform and CRS from GeoTIFF."""
+def read_image_metadata(image_path: str) -> Tuple[Optional[rasterio.transform.Affine], Optional[str]]:
+    """
+    Read geotransform and CRS from GeoTIFF.
+    
+    Args:
+        image_path: Path to GeoTIFF file
+        
+    Returns:
+        Tuple of (transform, crs) where transform may be None if not georeferenced
+    """
     with rasterio.open(image_path) as src:
         transform = src.transform
         crs = src.crs.to_string() if src.crs else None

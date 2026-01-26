@@ -343,6 +343,11 @@ class LangRS:
                     "No bounding boxes available. Run detect_objects() first."
                 )
             boxes = self.bounding_boxes
+        
+        if len(boxes) == 0:
+            raise SegmentationError(
+                "Cannot segment: bounding boxes list is empty."
+            )
 
         # Use config defaults if not provided (explicitly check for None)
         window_size = window_size if window_size is not None else self.config.segmentation.window_size

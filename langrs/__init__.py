@@ -60,6 +60,8 @@ from .io.output_manager import OutputManager
 from .core.config import LangRSConfig
 from .core.pipeline import LangRS
 from .core.builder import LangRSBuilder
+# Alias for backward compatibility with examples and documentation
+LangRSPipelineBuilder = LangRSBuilder
 from .models.factory import ModelFactory
 
 # Utilities
@@ -78,7 +80,8 @@ from .processing.postprocessing import apply_nms, apply_nms_areas
 __all__ = [
     # Core pipeline
     "LangRS",
-    "LangRSPipelineBuilder",
+    "LangRSBuilder",
+    "LangRSPipelineBuilder",  # Alias for backward compatibility
     "LangRSConfig",
     # Models
     "DetectionModel",

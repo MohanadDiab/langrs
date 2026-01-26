@@ -43,11 +43,29 @@ LangRS is a Python package for remote sensing image segmentation that combines a
 
 ## Installation
 
-### Install LangRS with pip
+### Install LangRS from PyPI
 
 ```bash
 pip install langrs
 ```
+
+### Install LangRS from Source (Development)
+
+For development or to run examples:
+
+```bash
+# Clone the repository
+git clone https://github.com/MohanadDiab/langrs.git
+cd langrs
+
+# Install in editable mode
+pip install -e .
+
+# Or install normally
+pip install .
+```
+
+**Note:** When running examples, make sure to install the package first. See `EXAMPLES_README.md` for more details.
 
 ## Usage
 

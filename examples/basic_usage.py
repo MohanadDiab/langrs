@@ -21,4 +21,4 @@ masks = langrs.run_full_pipeline(
 )
 
 print(f"Segmentation complete! Masks shape: {masks.shape}")
-print(f"Results saved to: {pipeline.output_manager.output_dir}")
+print(f"Results saved to: {langrs.output_manager.output_dir}")
