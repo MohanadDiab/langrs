@@ -4,10 +4,16 @@ import geopandas as gpd
 from shapely.geometry import Polygon, shape
 from rasterio.features import shapes
 from PIL import Image
-from torchvision.ops import nms
 import torch
 import os
 from langrs.geospatial.converter import get_crs
+
+try:
+    from torchvision.ops import nms
+    TORCHVISION_AVAILABLE = True
+except (ImportError, AttributeError, ModuleNotFoundError):
+    TORCHVISION_AVAILABLE = False
+    nms = None
 
 def read_image_metadata(image_path):
     """Reads geotransform and CRS from GeoTIFF."""
@@ -172,6 +178,10 @@ def load_image(image):
         
 # TODO: Mohanad: Update this to be size-aware NMS
 def apply_nms(boxes, iou_threshold=0.5):
+    if not TORCHVISION_AVAILABLE:
+        raise ImportError(
+            "torchvision is required for NMS. Install it with: pip install torchvision"
+        )
     boxes_tensor = torch.tensor(boxes, dtype=torch.float32)
     scores_tensor = torch.ones(len(boxes))  # Or real scores if you have them
     indices = nms(boxes_tensor, scores_tensor, iou_threshold)
@@ -187,7 +197,13 @@ def apply_nms_areas(boxes, iou_threshold=0.5, inverse_area=False):
         inverse_area (bool): If True, smaller boxes will have higher scores.
     Returns:
         list of tuples: Filtered bounding boxes after applying NMS.
+    Raises:
+        ImportError: If torchvision is not available
     """
+    if not TORCHVISION_AVAILABLE:
+        raise ImportError(
+            "torchvision is required for NMS. Install it with: pip install torchvision"
+        )
     boxes_tensor = torch.tensor(boxes, dtype=torch.float32)
 
     # Compute area for each box: (x2 - x1) * (y2 - y1)

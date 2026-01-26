@@ -2,7 +2,13 @@
 
 from typing import List
 import torch
-from torchvision.ops import nms
+
+try:
+    from torchvision.ops import nms
+    TORCHVISION_AVAILABLE = True
+except (ImportError, AttributeError, ModuleNotFoundError):
+    TORCHVISION_AVAILABLE = False
+    nms = None
 
 from ..utils.types import BoundingBox
 
@@ -17,7 +23,15 @@ def apply_nms(boxes: List[BoundingBox], iou_threshold: float = 0.5) -> torch.Ten
         
     Returns:
         Filtered bounding boxes as torch.Tensor
+        
+    Raises:
+        ImportError: If torchvision is not available
     """
+    if not TORCHVISION_AVAILABLE:
+        raise ImportError(
+            "torchvision is required for NMS. Install it with: pip install torchvision"
+        )
+    
     boxes_tensor = torch.tensor(boxes, dtype=torch.float32)
     scores_tensor = torch.ones(len(boxes))  # Use uniform scores
     indices = nms(boxes_tensor, scores_tensor, iou_threshold)
@@ -39,7 +53,15 @@ def apply_nms_areas(
         
     Returns:
         Filtered bounding boxes as torch.Tensor
+        
+    Raises:
+        ImportError: If torchvision is not available
     """
+    if not TORCHVISION_AVAILABLE:
+        raise ImportError(
+            "torchvision is required for NMS. Install it with: pip install torchvision"
+        )
+    
     boxes_tensor = torch.tensor(boxes, dtype=torch.float32)
 
     # Compute area for each box: (x2 - x1) * (y2 - y1)
