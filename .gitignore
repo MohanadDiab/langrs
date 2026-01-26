@@ -131,16 +131,19 @@ Thumbs.db
 
 # Project specific
 output/
-*.tif
-*.tiff
-*.jpg
-*.png
-*.shp
-*.dbf
-*.shx
-*.prj
-*.cpg
-*.qpj
+# Ignore large image files in root, but allow data/ directory images
+/*.tif
+/*.tiff
+/*.jpg
+/*.jpeg
+/*.png
+# Ignore shapefile components in root
+/*.shp
+/*.dbf
+/*.shx
+/*.prj
+/*.cpg
+/*.qpj
 
 # Model weights (if cached locally)
 *.pth
@@ -149,10 +152,12 @@ output/
 *.safetensors
 
 # Hugging Face model cache (typically in ~/.cache/huggingface, but if local)
-models/
+# Only ignore top-level models/ directory, not langrs/models/
+/models/
+# Ignore model config files in root or cache directories, but allow in langrs/models/ if needed
+/*/config.json
+/*/tokenizer.json
 *.bin
-config.json
-tokenizer.json
 
 # Temporary files
 *.tmp
