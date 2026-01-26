@@ -5,6 +5,16 @@ This example demonstrates how to use GroundingDINO for object detection
 in remote sensing images using the LangRS package.
 """
 
+import sys
+from pathlib import Path
+
+# Add parent directory to path to allow importing langrs without installation
+# This allows running the example directly without: pip install -e .
+example_dir = Path(__file__).parent
+project_root = example_dir.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
 from PIL import Image
 from langrs import GroundingDINODetector, ModelFactory
 
