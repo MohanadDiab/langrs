@@ -158,27 +158,53 @@ class RexOmniWrapper:
                     "  pip install \"langrs[rex-omni]\""
                 )
 
+            torch_dtype = kwargs.get("torch_dtype", torch.bfloat16)
+            attn_implementation = kwargs.get("attn_implementation", "flash_attention_2")
+            device_map = kwargs.get("device_map", "auto")
+            trust_remote_code = kwargs.get("trust_remote_code", True)
+            extra_model_kwargs = {
+                k: v
+                for k, v in kwargs.items()
+                if k
+                not in [
+                    "torch_dtype",
+                    "attn_implementation",
+                    "device_map",
+                    "trust_remote_code",
+                ]
+            }
+
             # Initialize transformers model
-            self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-                self.model_path,
-                torch_dtype=kwargs.get("torch_dtype", torch.bfloat16),
-                attn_implementation=kwargs.get(
-                    "attn_implementation", "flash_attention_2"
-                ),
-                device_map=kwargs.get("device_map", "auto"),
-                trust_remote_code=kwargs.get("trust_remote_code", True),
-                **{
-                    k: v
-                    for k, v in kwargs.items()
-                    if k
-                    not in [
-                        "torch_dtype",
-                        "attn_implementation",
-                        "device_map",
-                        "trust_remote_code",
-                    ]
-                },
-            )
+            try:
+                self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+                    self.model_path,
+                    torch_dtype=torch_dtype,
+                    attn_implementation=attn_implementation,
+                    device_map=device_map,
+                    trust_remote_code=trust_remote_code,
+                    **extra_model_kwargs,
+                )
+            except ImportError as e:
+                # Keep CUDA as a hard requirement, but do not force flash-attn as a
+                # hard dependency. If flash-attn is unavailable, retry with SDPA.
+                if (
+                    attn_implementation == "flash_attention_2"
+                    and "FlashAttention2" in str(e)
+                ):
+                    logger.warning(
+                        "flash_attention_2 is unavailable; retrying Rex-Omni "
+                        "transformers load with attn_implementation='sdpa'."
+                    )
+                    self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+                        self.model_path,
+                        torch_dtype=torch_dtype,
+                        attn_implementation="sdpa",
+                        device_map=device_map,
+                        trust_remote_code=trust_remote_code,
+                        **extra_model_kwargs,
+                    )
+                else:
+                    raise
 
             # Initialize processor
             self.processor = AutoProcessor.from_pretrained(
