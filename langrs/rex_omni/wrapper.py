@@ -158,10 +158,10 @@ class RexOmniWrapper:
                     "  pip install \"langrs[rex-omni]\""
                 )
 
-            # bfloat16 can be unstable on some newer GPU + cuDNN combinations
-            # (e.g., internal errors in vision conv3d path). Use float16 by
-            # default for better runtime compatibility unless caller overrides.
-            torch_dtype = kwargs.get("torch_dtype", torch.float16)
+            # Lower-precision dtypes (bf16/fp16) can be unstable on some newer
+            # GPU + nightly torch/cuDNN combinations in Qwen2.5-VL vision path.
+            # Default to float32 for maximum stability unless caller overrides.
+            torch_dtype = kwargs.get("torch_dtype", torch.float32)
             attn_implementation = kwargs.get("attn_implementation", "flash_attention_2")
             device_map = kwargs.get("device_map", "auto")
             trust_remote_code = kwargs.get("trust_remote_code", True)

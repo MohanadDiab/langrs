@@ -158,6 +158,14 @@ class RexOmniDetector(DetectionModel):
         except DetectionError:
             raise
         except Exception as e:
+            msg = str(e)
+            if "device-side assert triggered" in msg or "vectorized_gather_kernel" in msg:
+                raise DetectionError(
+                    "Detection failed in Rex-Omni adapter due to a CUDA device-side assert "
+                    "(backend instability). Restart the Python process and retry with a safer "
+                    "dtype (e.g. torch_dtype=torch.float32) or a different backend. "
+                    f"backend={self._config.backend}, model_path={self._config.model_path!r}, error={e}"
+                ) from e
             raise DetectionError(
                 "Detection failed in Rex-Omni adapter. "
                 f"backend={self._config.backend}, model_path={self._config.model_path!r}, error={e}"
