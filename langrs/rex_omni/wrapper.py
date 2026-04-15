@@ -210,21 +210,22 @@ class RexOmniWrapper:
                     raise
 
             # Initialize processor
+            # NOTE: Passing `backend=...` can break on some transformers/Qwen
+            # processor versions (e.g. Qwen2VLVideoProcessor backend property has
+            # no setter). Keep compatibility by preferring use_fast=False and
+            # falling back to plain init if that kw is unsupported.
             try:
-                # Newer transformers deprecate use_fast for this processor.
-                self.processor = AutoProcessor.from_pretrained(
-                    self.model_path,
-                    min_pixels=self.min_pixels,
-                    max_pixels=self.max_pixels,
-                    backend="pil",
-                )
-            except TypeError:
-                # Backward-compatible fallback for older versions.
                 self.processor = AutoProcessor.from_pretrained(
                     self.model_path,
                     min_pixels=self.min_pixels,
                     max_pixels=self.max_pixels,
                     use_fast=False,
+                )
+            except TypeError:
+                self.processor = AutoProcessor.from_pretrained(
+                    self.model_path,
+                    min_pixels=self.min_pixels,
+                    max_pixels=self.max_pixels,
                 )
 
             # Set padding side to left for batch inference with Flash Attention
