@@ -1,0 +1,10 @@
+include README.md
+include LICENSE
+include requirements.txt
+include requirements-core.txt
+include requirements-dino.txt
+include requirements-dev.txt
+include THIRD_PARTY_NOTICES.md
+
+# Do not ship the full upstream Rex-Omni clone in sdists.
+prune Rex-Omni

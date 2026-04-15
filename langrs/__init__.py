@@ -23,26 +23,54 @@ except ImportError:
     SAMSegmenter = None
 
 # Phase 3: Processing, visualization, I/O
-from .processing.image_loader import ImageLoader, ImageData
-from .processing.tiling import TilingStrategy, SlidingWindowTiler, Tile
-from .processing.outlier_detection import (
-    OutlierDetector,
-    ZScoreOutlierDetector,
-    IQROutlierDetector,
-    RobustCovarianceOutlierDetector,
-    SVMOutlierDetector,
-    IsolationForestOutlierDetector,
-    LOFOutlierDetector,
-)
-from .visualization.base import Visualizer
-from .visualization.matplotlib_viz import MatplotlibVisualizer
-from .io.output_manager import OutputManager
+try:
+    from .processing.image_loader import ImageLoader, ImageData
+    from .processing.tiling import TilingStrategy, SlidingWindowTiler, Tile
+    from .processing.outlier_detection import (
+        OutlierDetector,
+        ZScoreOutlierDetector,
+        IQROutlierDetector,
+        RobustCovarianceOutlierDetector,
+        SVMOutlierDetector,
+        IsolationForestOutlierDetector,
+        LOFOutlierDetector,
+    )
+    from .visualization.base import Visualizer
+    from .visualization.matplotlib_viz import MatplotlibVisualizer
+    from .io.output_manager import OutputManager
+except ImportError:
+    # Optional runtime deps (e.g. rasterio/geospatial stack) may not be present in
+    # minimal environments. Import submodules directly as needed.
+    ImageLoader = None
+    ImageData = None
+    TilingStrategy = None
+    SlidingWindowTiler = None
+    Tile = None
+    OutlierDetector = None
+    ZScoreOutlierDetector = None
+    IQROutlierDetector = None
+    RobustCovarianceOutlierDetector = None
+    SVMOutlierDetector = None
+    IsolationForestOutlierDetector = None
+    LOFOutlierDetector = None
+    Visualizer = None
+    MatplotlibVisualizer = None
+    OutputManager = None
 
 # Phase 4: Core pipeline
-from .core.config import LangRSConfig
-from .core.pipeline import LangRS
-from .core.builder import LangRSBuilder
-from .models.factory import ModelFactory
+try:
+    from .core.config import LangRSConfig
+    from .core.pipeline import LangRS
+    from .core.builder import LangRSBuilder
+    from .models.factory import ModelFactory
+except ImportError:
+    LangRSConfig = None
+    LangRS = None
+    LangRSBuilder = None
+    ModelFactory = None
+
+# Backwards-compatible alias (older docs referenced LangRSPipelineBuilder).
+LangRSPipelineBuilder = LangRSBuilder
 
 # Utilities
 from .utils.exceptions import (
@@ -53,13 +81,18 @@ from .utils.exceptions import (
     SegmentationError,
     ConfigurationError,
 )
-from .processing.postprocessing import apply_nms, apply_nms_areas
+try:
+    from .processing.postprocessing import apply_nms, apply_nms_areas
+except ImportError:
+    apply_nms = None
+    apply_nms_areas = None
 
 
 # Public API
 __all__ = [
     # Core pipeline
     "LangRS",
+    "LangRSBuilder",
     "LangRSPipelineBuilder",
     "LangRSConfig",
     # Models

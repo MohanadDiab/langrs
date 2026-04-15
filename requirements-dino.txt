@@ -1,0 +1,5 @@
+# Optional Grounding DINO stack — may conflict with Rex-Omni / torch pins.
+# Install with: pip install "langrs[dino]"
+# Prefer a separate virtual environment if you already use [rex-omni].
+
+groundingdino-py==0.4.0

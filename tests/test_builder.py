@@ -3,6 +3,8 @@
 import pytest
 import tempfile
 
+pytest.importorskip("rasterio")
+
 from langrs.core.builder import LangRSBuilder
 from langrs.core.config import LangRSConfig
 from langrs.utils.exceptions import ModelLoadError
@@ -14,7 +16,7 @@ class TestLangRSBuilder:
     def test_initialization(self):
         """Test builder initialization."""
         builder = LangRSBuilder()
-        assert builder.detection_model_name == "grounding_dino"
+        assert builder.detection_model_name == "rex_omni"
         assert builder.segmentation_model_name == "sam"
         assert builder.output_path == "output"
 

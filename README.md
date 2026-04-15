@@ -7,7 +7,7 @@
   <img src="https://raw.githubusercontent.com/MohanadDiab/langrs/main/assets/langrs_logo.png" alt="LangRS Logo" width="300"/>
 </p>
 
-**A modern, extensible Python package for zero-shot segmentation of aerial images using GroundingDINO and Segment Anything Model (SAM)**
+**A modern, extensible Python package for zero-shot segmentation of aerial images using Rex-Omni or Grounding DINO with the Segment Anything Model (SAM).**
 
 ## Introduction
 
@@ -37,17 +37,34 @@ LangRS is a Python package for remote sensing image segmentation that combines a
 - **Outlier Detection:** Apply various statistical and machine learning methods to filter out anomalies in the detected objects based on the area of the detected bounding boxes.
 - **Non-Max Suppression:** Applies NMS to the input bounding boxes, can reduce accuracy slightly, but greatly increases inference speed and lowers memory usage.
 - **Area Calculation:** Compute and rank bounding boxes by their areas.
-- **Image Segmentation:** Detect and extract objects based on text prompts using GroundingDINO and SAM.
+- **Image Segmentation:** Detect and extract objects based on text prompts using Rex-Omni (default) or Grounding DINO, plus SAM.
 - **Modern Architecture:** Built with SOLID principles, dependency injection, and abstract base classes for easy extension.
 - **Geospatial Support:** Automatic CRS extraction and shapefile export for bounding boxes and masks.
 
 ## Installation
 
-### Install LangRS with pip
+### PyPI installs
+
+LangRS vendors the Rex-Omni Python wrapper under `langrs/rex_omni/`. Optional heavy GPU dependencies (for example **flash-attn** and/or **vLLM**) may still be required depending on your environment and chosen backend. For that reason:
+
+- **`pip install langrs`** — core runtime.
+- **`pip install "langrs[rex-omni]"`** — optional heavy GPU extras for the default **Rex-Omni** detection path (e.g. flash-attn / vLLM).
+- **`pip install "langrs[dino]"`** — optional **Grounding DINO** only. Do **not** combine with `[rex-omni]` in the same environment if you hit version conflicts; use separate virtual environments.
+
+**Licensing / notices:** see `THIRD_PARTY_NOTICES.md`.
+
+**Migration (previous single `requirements.txt`):** Grounding DINO is no longer in the default dependency set. To keep the old detector, use `pip install "langrs[dino]"` and pass `detection_model="grounding_dino"` when constructing `LangRS` (see below once the default is switched in a following release).
+
+### Install from source (development)
 
 ```bash
-pip install langrs
+git clone https://github.com/MohanadDiab/langrs.git
+cd langrs
+pip install -r requirements.txt
+pip install -e ".[rex-omni]"
 ```
+
+Optional files: `requirements-core.txt` (runtime core), `requirements-dino.txt` (DINO-only pins), `requirements-dev.txt` (pytest).
 
 ## Usage
 
@@ -136,7 +153,7 @@ masks = langrs.run_full_pipeline("path_to_your_tif_file", "roof")
 
 #### `LangRS()` Initialization:
 - `output_path`: Directory to save output files
-- `detection_model`: Name of detection model (default: "grounding_dino")
+- `detection_model`: Name of detection model (default: "rex_omni")
 - `segmentation_model`: Name of segmentation model (default: "sam")
 - `device`: Device to use ('cpu' or 'cuda', default: auto-detect)
 - `config`: Optional LangRSConfig object

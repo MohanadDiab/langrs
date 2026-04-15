@@ -7,6 +7,8 @@ import torch
 import tempfile
 from pathlib import Path
 
+pytest.importorskip("rasterio")
+
 from langrs.core.pipeline import LangRS
 from langrs.core.config import LangRSConfig
 from langrs.models.base import DetectionModel, SegmentationModel

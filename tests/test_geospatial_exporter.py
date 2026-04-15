@@ -4,6 +4,7 @@ import pytest
 import tempfile
 import numpy as np
 from pathlib import Path
+pytest.importorskip("rasterio")
 import rasterio
 from rasterio.crs import CRS
 

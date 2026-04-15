@@ -77,12 +77,15 @@ def convert_bounding_boxes_to_geospatial(
     gdf_boxes : GeoDataFrame
         GeoDataFrame of georeferenced polygons (rectangles).
     """
+    transform = None
     if image_path:
         transform, image_crs = read_image_metadata(image_path)
         if crs is None:
             crs = image_crs
     elif crs is None:
         raise ValueError("Either `crs` or `image_path` must be provided.")
+    else:
+        raise ValueError("`image_path` is required to derive geotransform information.")
 
     if transform is None:
         raise ValueError("Image must have geotransform information.")
@@ -115,12 +118,15 @@ def convert_masks_to_geospatial(
     gdf_masks : GeoDataFrame
         GeoDataFrame of georeferenced mask polygons.
     """
+    transform = None
     if image_path:
         transform, image_crs = read_image_metadata(image_path)
         if crs is None:
             crs = image_crs
     elif crs is None:
         raise ValueError("Either `crs` or `image_path` must be provided.")
+    else:
+        raise ValueError("`image_path` is required to derive geotransform information.")
 
     if transform is None:
         raise ValueError("Image must have geotransform information.")

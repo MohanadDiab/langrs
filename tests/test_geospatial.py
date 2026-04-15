@@ -3,6 +3,7 @@
 import pytest
 import tempfile
 from pathlib import Path
+pytest.importorskip("rasterio")
 import rasterio
 from rasterio.crs import CRS
 import numpy as np

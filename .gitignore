@@ -161,3 +161,41 @@ output/
 *COMPLETE*.md
 *_SUMMARY.md
 *_COMPLETE.md
+
+# Production packaging / local-only artifacts
+# Keep only canonical top-level docs tracked by default.
+**/README*.md
+!README.md
+!THIRD_PARTY_NOTICES.md
+
+# Local planning / notes
+action_plan.md
+*_plan.md
+notes/
+
+# Local upstream clone (vendored code lives under langrs/rex_omni/)
+Rex-Omni/
+rexomni/
+RexOmni/
+
+# Sensitive files and credentials
+.env.*
+*.env
+!.env.example
+secrets.*
+credentials.*
+*.pem
+*.key
+*.p12
+*.crt
+*.csr
+*.jks
+*.kdbx
+*.token
+*.secret
+
+# Runtime / operations artifacts
+logs/
+*.pid
+*.out
+*.err

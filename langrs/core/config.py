@@ -17,6 +17,19 @@ class DetectionConfig:
     text_threshold: float = 0.3
     window_size: int = 500
     overlap: int = 200
+    # Rex-Omni (MLLM) tiling controls:
+    # - "auto": prefer full-image when it likely fits, else tile
+    # - "always": always tile
+    # - "never": never tile (single full-image call)
+    tiling_mode: str = "auto"
+    # Hard cap to avoid exploding number of tiles (MLLM calls).
+    max_tiles: int = 64
+    # Heuristic: if original image area <= this, run as single full-image call in auto mode.
+    # (Rex-Omni will internally resize via smart_resize anyway.)
+    full_image_max_area: int = 2_000_000
+    # Optional NMS on aggregated detections (may help speed downstream steps).
+    apply_nms: bool = False
+    nms_iou_threshold: float = 0.5
 
     def __post_init__(self):
         """Validate configuration values."""
@@ -40,6 +53,22 @@ class DetectionConfig:
             raise ConfigurationError(
                 f"overlap ({self.overlap}) must be less than window_size ({self.window_size})"
             )
+        if self.tiling_mode not in {"auto", "always", "never"}:
+            raise ConfigurationError(
+                f"tiling_mode must be one of 'auto', 'always', 'never', got {self.tiling_mode!r}"
+            )
+        if self.max_tiles <= 0:
+            raise ConfigurationError(
+                f"max_tiles must be positive, got {self.max_tiles}"
+            )
+        if self.full_image_max_area <= 0:
+            raise ConfigurationError(
+                f"full_image_max_area must be positive, got {self.full_image_max_area}"
+            )
+        if not 0.0 < self.nms_iou_threshold <= 1.0:
+            raise ConfigurationError(
+                f"nms_iou_threshold must be between 0.0 and 1.0, got {self.nms_iou_threshold}"
+            )
 
 
 @dataclass
@@ -49,6 +78,13 @@ class SegmentationConfig:
     multimask_output: bool = False
     window_size: int = 500
     overlap: int = 200
+    # Behavior for run_full_pipeline(): whether to use filtered boxes for segmentation.
+    use_filtered_boxes: bool = True
+    # Which outlier method to use when use_filtered_boxes=True.
+    # - None: pick a deterministic first method
+    # - "union": union boxes from all methods
+    # - otherwise: use that method key (e.g. "zscore")
+    filtered_boxes_method: Optional[str] = None
 
     def __post_init__(self):
         """Validate configuration values."""
@@ -63,6 +99,10 @@ class SegmentationConfig:
         if self.overlap >= self.window_size:
             raise ConfigurationError(
                 f"overlap ({self.overlap}) must be less than window_size ({self.window_size})"
+            )
+        if self.filtered_boxes_method is not None and not isinstance(self.filtered_boxes_method, str):
+            raise ConfigurationError(
+                f"filtered_boxes_method must be a string or None, got {type(self.filtered_boxes_method).__name__}"
             )
 
 
@@ -275,11 +315,18 @@ class LangRSConfig:
                 "text_threshold": self.detection.text_threshold,
                 "window_size": self.detection.window_size,
                 "overlap": self.detection.overlap,
+                "tiling_mode": self.detection.tiling_mode,
+                "max_tiles": self.detection.max_tiles,
+                "full_image_max_area": self.detection.full_image_max_area,
+                "apply_nms": self.detection.apply_nms,
+                "nms_iou_threshold": self.detection.nms_iou_threshold,
             },
             "segmentation": {
                 "multimask_output": self.segmentation.multimask_output,
                 "window_size": self.segmentation.window_size,
                 "overlap": self.segmentation.overlap,
+                "use_filtered_boxes": self.segmentation.use_filtered_boxes,
+                "filtered_boxes_method": self.segmentation.filtered_boxes_method,
             },
             "outlier_detection": {
                 "zscore_threshold": self.outlier_detection.zscore_threshold,

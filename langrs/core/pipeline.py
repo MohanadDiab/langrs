@@ -18,6 +18,7 @@ from ..io.output_manager import OutputManager
 from ..core.config import LangRSConfig
 from ..utils.exceptions import DetectionError, SegmentationError
 from ..utils.types import BoundingBox
+from ..processing.postprocessing import apply_nms
 
 
 class LangRS:
@@ -55,7 +56,7 @@ class LangRS:
         With custom models:
             langrs = LangRS(
                 output_path="output",
-                detection_model="grounding_dino",
+                detection_model="rex_omni",
                 segmentation_model="sam",
                 device="cpu"
             )
@@ -69,7 +70,7 @@ class LangRS:
         
         Args:
             output_path: Base output directory
-            detection_model: Name of detection model (default: "grounding_dino")
+            detection_model: Name of detection model (default: "rex_omni")
             segmentation_model: Name of segmentation model (default: "sam")
             device: Device to use ('cpu' or 'cuda', default: auto-detect)
             config: Optional configuration object
@@ -170,10 +171,44 @@ class LangRS:
         text_threshold = text_threshold if text_threshold is not None else self.config.detection.text_threshold
 
         try:
-            # Create tiles
-            tiles = self.tiling_strategy.create_tiles(
-                self.image_data.pil_image, window_size, overlap
-            )
+            # Tiling mode (MLLM-friendly defaults for Rex-Omni).
+            tiling_mode = getattr(self.config.detection, "tiling_mode", "auto")
+            max_tiles = getattr(self.config.detection, "max_tiles", 64)
+            full_image_max_area = getattr(self.config.detection, "full_image_max_area", 2_000_000)
+
+            width, height = self.image_data.pil_image.size
+            image_area = int(width) * int(height)
+
+            if tiling_mode == "never" or (tiling_mode == "auto" and image_area <= full_image_max_area):
+                tiles = [
+                    Tile(
+                        image=self.image_data.pil_image,
+                        x_min=0,
+                        y_min=0,
+                        x_max=width,
+                        y_max=height,
+                        offset_x=0,
+                        offset_y=0,
+                    )
+                ]
+            else:
+                # Adjust window_size upward if it would create too many tiles.
+                # This avoids exploding calls for MLLM-style detectors.
+                step = max(1, window_size - overlap)
+                tiles_x = (max(0, width - 1) // step) + 1
+                tiles_y = (max(0, height - 1) // step) + 1
+                est_tiles = tiles_x * tiles_y
+                while est_tiles > max_tiles and window_size < max(width, height):
+                    window_size = int(window_size * 1.25)
+                    overlap = min(overlap, max(0, window_size - 1))
+                    step = max(1, window_size - overlap)
+                    tiles_x = (max(0, width - 1) // step) + 1
+                    tiles_y = (max(0, height - 1) // step) + 1
+                    est_tiles = tiles_x * tiles_y
+
+                tiles = self.tiling_strategy.create_tiles(
+                    self.image_data.pil_image, window_size, overlap
+                )
 
             # Detect objects in each tile
             all_boxes = []
@@ -197,13 +232,25 @@ class LangRS:
                     )
                     all_boxes.append(global_box)
 
+            # Optional NMS across all detections (backend-agnostic).
+            if getattr(self.config.detection, "apply_nms", False) and all_boxes:
+                try:
+                    kept = apply_nms(
+                        all_boxes,
+                        iou_threshold=getattr(self.config.detection, "nms_iou_threshold", 0.5),
+                    )
+                    all_boxes = [tuple(map(float, b)) for b in kept.tolist()]
+                except Exception:
+                    # If NMS fails due to missing deps, keep raw boxes.
+                    pass
+
             self.bounding_boxes = all_boxes
 
             # Calculate areas
             self._calculate_areas()
 
             # Visualize bounding boxes
-            output_path = self.output_manager.get_path_str("results_dino.jpg")
+            output_path = self.output_manager.get_path_str("results_detection.jpg")
             self.visualizer.plot_boxes(
                 self.image_data.pil_image,
                 self.bounding_boxes,
@@ -454,7 +501,29 @@ class LangRS:
         """
         self.load_image(image_source)
         self.detect_objects(text_prompt, **kwargs)
-        self.filter_outliers()
+        filtered = self.filter_outliers()
+
+        use_filtered = getattr(self.config.segmentation, "use_filtered_boxes", True)
+        method = getattr(self.config.segmentation, "filtered_boxes_method", None)
+
+        if use_filtered and isinstance(filtered, dict) and filtered:
+            boxes_for_segmentation = None
+
+            if method is None:
+                # Choose a deterministic method order.
+                first_method = sorted(filtered.keys())[0]
+                boxes_for_segmentation = filtered.get(first_method)
+            elif method == "union":
+                union_boxes = []
+                for boxes in filtered.values():
+                    union_boxes.extend(boxes)
+                boxes_for_segmentation = union_boxes
+            else:
+                boxes_for_segmentation = filtered.get(method)
+
+            if boxes_for_segmentation:
+                return self.segment(boxes=boxes_for_segmentation)
+
         return self.segment()
 
     def _calculate_areas(self) -> None:

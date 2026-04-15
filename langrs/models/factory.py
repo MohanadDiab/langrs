@@ -13,7 +13,7 @@ class ModelFactory:
 
     @staticmethod
     def create_detection_model(
-        model_name: str = "grounding_dino",
+        model_name: str = "rex_omni",
         model_path: Optional[str] = None,
         device: Optional[Union[str, torch.device]] = None,
         **kwargs

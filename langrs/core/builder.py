@@ -31,7 +31,7 @@ class LangRSBuilder:
     def __init__(self):
         """Initialize builder with defaults."""
         self.config: Optional[LangRSConfig] = None
-        self.detection_model_name: str = "grounding_dino"
+        self.detection_model_name: str = "rex_omni"
         self.segmentation_model_name: str = "sam"
         self.detection_model_path: Optional[str] = None
         self.segmentation_model_path: Optional[str] = None

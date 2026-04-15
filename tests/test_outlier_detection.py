@@ -3,6 +3,8 @@
 import pytest
 import numpy as np
 
+pytest.importorskip("rasterio")
+
 from langrs.processing.outlier_detection import (
     OutlierDetector,
     ZScoreOutlierDetector,

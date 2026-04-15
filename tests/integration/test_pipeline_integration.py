@@ -6,6 +6,8 @@ from PIL import Image
 import tempfile
 from pathlib import Path
 
+pytest.importorskip("rasterio")
+
 from langrs import LangRS, LangRSBuilder, LangRSConfig
 from langrs.models.base import DetectionModel, SegmentationModel
 from langrs.processing.image_loader import ImageLoader

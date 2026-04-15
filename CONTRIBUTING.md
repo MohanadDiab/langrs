@@ -19,8 +19,12 @@ cd langrs
 conda create -n langrs-dev python=3.10
 conda activate langrs-dev
 pip install -r requirements.txt
-pip install -e .
+pip install -e ".[rex-omni]"
 ```
+
+For tests that only need Grounding DINO, use a separate env with `pip install -e ".[dino]"` (avoid mixing `[rex-omni]` and `[dino]` if you see dependency conflicts).
+
+Core dependency lists: `requirements-core.txt`, `requirements-dino.txt`, `requirements-dev.txt` (aggregated by `requirements.txt`).
 
 ### 3. Install Development Dependencies
 

@@ -6,6 +6,8 @@ from PIL import Image
 import tempfile
 from pathlib import Path
 
+pytest.importorskip("rasterio")
+
 from langrs.processing.image_loader import ImageLoader, ImageData
 from langrs.utils.exceptions import ImageLoadError
 

@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Packaging (Phase 1)**: Split dependencies into `requirements-core.txt`, `requirements-dino.txt`, and `requirements-dev.txt`; `requirements.txt` aggregates core + dev for local work.
+- **`setup.py`**: `install_requires` reads the core file; **extras** `rex-omni` (optional heavy GPU deps such as flash-attn / vLLM) and `dino` (Grounding DINO). Removed monolithic `requirements.txt` as the single source for `install_requires`.
+- **README**: Installation section updated for extras and migration from the old all-in-one requirements.
+
 ## [2.0.0] - 2025-01-XX
 
 ### Added

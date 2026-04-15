@@ -1,13 +1,10 @@
-numpy==2.2.1
-matplotlib==3.10.0
-Pillow==11.0.0
-rasterio==1.4.3
-torch==2.5.1
-scikit-learn==1.6.0
-scipy==1.14.1
-segment-anything-py==1.0.1
-segment-geospatial==0.12.3
-groundingdino-py==0.4.0
-PyYAML>=6.0
-pytest>=7.0.0
-pytest-cov>=4.0.0
+# LangRS — local / CI development install (default Rex-oriented core + tests).
+# PyPI installs use metadata from setup.py (install_requires + extras).
+#
+# Default detection backend (Rex-Omni) is vendored inside `langrs` and uses the
+# core requirements in `requirements-core.txt`. Optional heavy GPU extras
+# (e.g. flash-attn / vLLM) are exposed via setuptools extras, for example:
+#   pip install -e ".[rex-omni]"
+
+-r requirements-core.txt
+-r requirements-dev.txt

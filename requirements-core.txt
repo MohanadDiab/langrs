@@ -1,0 +1,23 @@
+# Shared runtime dependencies for LangRS (Rex-Omni–oriented default stack).
+# Grounding DINO is not included; use requirements-dino.txt or pip install "langrs[dino]".
+#
+# Rex-Omni Python wrapper code is **vendored inside langrs**; this file contains the
+# core runtime deps (torch / transformers / qwen-vl-utils / geospatial stack).
+# Heavy GPU extras such as flash-attn or vLLM are optional setuptools extras.
+
+numpy>=1.26,<3
+matplotlib>=3.8
+Pillow>=10
+rasterio>=1.3
+torch>=2.5
+torchvision>=0.20
+scikit-learn>=1.5
+scipy>=1.11
+segment-anything-py>=1.0.1
+PyYAML>=6
+geopandas>=0.14
+shapely>=2
+transformers>=4.51
+accelerate>=1.10
+huggingface-hub>=0.24
+qwen-vl-utils>=0.0.14

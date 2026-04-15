@@ -4,6 +4,8 @@ import pytest
 import numpy as np
 from PIL import Image
 
+pytest.importorskip("rasterio")
+
 from langrs.processing.tiling import (
     TilingStrategy,
     SlidingWindowTiler,
