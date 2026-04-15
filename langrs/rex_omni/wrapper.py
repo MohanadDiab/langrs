@@ -149,6 +149,15 @@ class RexOmniWrapper:
         elif self.backend == "transformers":
             from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
 
+            if not torch.cuda.is_available():
+                raise RuntimeError(
+                    "Rex-Omni transformers backend requires CUDA-enabled PyTorch and a compatible NVIDIA driver. "
+                    "Install a CUDA build first, for example:\n"
+                    "  pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124\n"
+                    "Then install Rex-Omni extras:\n"
+                    "  pip install \"langrs[rex-omni]\""
+                )
+
             # Initialize transformers model
             self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
                 self.model_path,

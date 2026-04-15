@@ -51,6 +51,17 @@ LangRS includes a direct Rex-Omni implementation under `langrs/rex_omni/` (wrapp
 - **`pip install "langrs[rex-omni]"`** — optional heavy GPU extras for the default **Rex-Omni** detection path (e.g. flash-attn / vLLM).
 - **`pip install "langrs[dino]"`** — optional **Grounding DINO** only. Do **not** combine with `[rex-omni]` in the same environment if you hit version conflicts; use separate virtual environments.
 
+### Recommended CUDA install for Rex-Omni
+
+Rex-Omni with the transformers backend is CUDA-only in LangRS. Install a compatible CUDA PyTorch build first, then install Rex-Omni extras:
+
+```bash
+pip install torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cu124
+pip install "langrs[rex-omni]"
+```
+
+If your cluster/driver stack is different, choose a matching CUDA wheel from the PyTorch index URL and keep `langrs[rex-omni]` as the second step.
+
 **Licensing / notices:** see `THIRD_PARTY_NOTICES.md`.
 
 **Migration (previous single `requirements.txt`):** Grounding DINO is no longer in the default dependency set. To keep the old detector, use `pip install "langrs[dino]"` and pass `detection_model="grounding_dino"` when constructing `LangRS`.
