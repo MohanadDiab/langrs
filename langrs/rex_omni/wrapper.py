@@ -158,7 +158,10 @@ class RexOmniWrapper:
                     "  pip install \"langrs[rex-omni]\""
                 )
 
-            torch_dtype = kwargs.get("torch_dtype", torch.bfloat16)
+            # bfloat16 can be unstable on some newer GPU + cuDNN combinations
+            # (e.g., internal errors in vision conv3d path). Use float16 by
+            # default for better runtime compatibility unless caller overrides.
+            torch_dtype = kwargs.get("torch_dtype", torch.float16)
             attn_implementation = kwargs.get("attn_implementation", "flash_attention_2")
             device_map = kwargs.get("device_map", "auto")
             trust_remote_code = kwargs.get("trust_remote_code", True)
@@ -207,12 +210,22 @@ class RexOmniWrapper:
                     raise
 
             # Initialize processor
-            self.processor = AutoProcessor.from_pretrained(
-                self.model_path,
-                min_pixels=self.min_pixels,
-                max_pixels=self.max_pixels,
-                use_fast=False,
-            )
+            try:
+                # Newer transformers deprecate use_fast for this processor.
+                self.processor = AutoProcessor.from_pretrained(
+                    self.model_path,
+                    min_pixels=self.min_pixels,
+                    max_pixels=self.max_pixels,
+                    backend="pil",
+                )
+            except TypeError:
+                # Backward-compatible fallback for older versions.
+                self.processor = AutoProcessor.from_pretrained(
+                    self.model_path,
+                    min_pixels=self.min_pixels,
+                    max_pixels=self.max_pixels,
+                    use_fast=False,
+                )
 
             # Set padding side to left for batch inference with Flash Attention
             self.processor.tokenizer.padding_side = "left"
@@ -656,15 +669,21 @@ class RexOmniWrapper:
             return_tensors="pt",
         ).to(self.model.device)
 
+        do_sample = self.temperature > 0
         generation_kwargs = {
             "max_new_tokens": self.max_tokens,
-            "temperature": self.temperature,
-            "top_p": self.top_p,
-            "top_k": self.top_k,
             "repetition_penalty": self.repetition_penalty,
-            "do_sample": self.temperature > 0,
+            "do_sample": do_sample,
             "pad_token_id": self.processor.tokenizer.eos_token_id,
         }
+        if do_sample:
+            generation_kwargs.update(
+                {
+                    "temperature": self.temperature,
+                    "top_p": self.top_p,
+                    "top_k": self.top_k,
+                }
+            )
 
         with torch.no_grad():
             generated_ids = self.model.generate(**inputs, **generation_kwargs)
@@ -712,15 +731,21 @@ class RexOmniWrapper:
             return_tensors="pt",
         ).to(self.model.device)
 
+        do_sample = self.temperature > 0
         generation_kwargs = {
             "max_new_tokens": self.max_tokens,
-            "temperature": self.temperature,
-            "top_p": self.top_p,
-            "top_k": self.top_k,
             "repetition_penalty": self.repetition_penalty,
-            "do_sample": self.temperature > 0,
+            "do_sample": do_sample,
             "pad_token_id": self.processor.tokenizer.eos_token_id,
         }
+        if do_sample:
+            generation_kwargs.update(
+                {
+                    "temperature": self.temperature,
+                    "top_p": self.top_p,
+                    "top_k": self.top_k,
+                }
+            )
 
         with torch.no_grad():
             generated_ids = self.model.generate(**inputs, **generation_kwargs)
