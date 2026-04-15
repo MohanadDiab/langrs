@@ -458,9 +458,18 @@ class RexOmniWrapper:
                 batch_messages
             )
         else:
-            batch_outputs, batch_generation_info = self._generate_transformers_batch(
-                batch_messages, images
-            )
+            # On some CUDA stacks (notably cutting-edge GPU + nightly torch),
+            # the batched Qwen2.5-VL path may hit gather/cudnn internal errors.
+            # For singleton batches (the common LangRS path), prefer the
+            # single-message generation path for better stability.
+            if batch_size == 1:
+                output_text, generation_info = self._generate_transformers(batch_messages[0])
+                batch_outputs = [output_text]
+                batch_generation_info = [generation_info]
+            else:
+                batch_outputs, batch_generation_info = self._generate_transformers_batch(
+                    batch_messages, images
+                )
 
         results = []
         total_time = time.time() - start_time
@@ -687,8 +696,24 @@ class RexOmniWrapper:
                 }
             )
 
-        with torch.no_grad():
-            generated_ids = self.model.generate(**inputs, **generation_kwargs)
+        try:
+            with torch.no_grad():
+                generated_ids = self.model.generate(**inputs, **generation_kwargs)
+        except RuntimeError as e:
+            message = str(e)
+            is_cuda_vision_failure = (
+                "CUDNN_STATUS_INTERNAL_ERROR" in message
+                or "vectorized_gather_kernel" in message
+                or "IndexKernelUtils.cu" in message
+            )
+            if not is_cuda_vision_failure:
+                raise
+            logger.warning(
+                "Transformers generation hit CUDA vision kernel issue; retrying with cuDNN disabled for this call."
+            )
+            with torch.backends.cudnn.flags(enabled=False):
+                with torch.no_grad():
+                    generated_ids = self.model.generate(**inputs, **generation_kwargs)
 
         generation_time = time.time() - generation_start
 
@@ -749,8 +774,29 @@ class RexOmniWrapper:
                 }
             )
 
-        with torch.no_grad():
-            generated_ids = self.model.generate(**inputs, **generation_kwargs)
+        try:
+            with torch.no_grad():
+                generated_ids = self.model.generate(**inputs, **generation_kwargs)
+        except RuntimeError as e:
+            message = str(e)
+            is_cuda_vision_failure = (
+                "CUDNN_STATUS_INTERNAL_ERROR" in message
+                or "vectorized_gather_kernel" in message
+                or "IndexKernelUtils.cu" in message
+            )
+            if not is_cuda_vision_failure:
+                raise
+            logger.warning(
+                "Batched transformers generation hit CUDA vision kernel issue; "
+                "falling back to per-sample generation."
+            )
+            outputs: List[str] = []
+            infos: List[Dict] = []
+            for msg in batch_messages:
+                out_text, info = self._generate_transformers(msg)
+                outputs.append(out_text)
+                infos.append(info)
+            return outputs, infos
 
         generation_time = time.time() - generation_start
 
