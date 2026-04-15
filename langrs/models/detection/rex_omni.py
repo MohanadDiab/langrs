@@ -74,6 +74,14 @@ class RexOmniDetector(DetectionModel):
 
             init_kwargs = dict(self._kwargs)
             if self._config.backend == "transformers":
+                # Honor explicit CPU requests unless the caller already provided
+                # a custom device_map override.
+                if (
+                    "device_map" not in init_kwargs
+                    and self._device is not None
+                    and self._device.type == "cpu"
+                ):
+                    init_kwargs["device_map"] = "cpu"
                 init_kwargs.setdefault("attn_implementation", self._config.attn_implementation)
                 init_kwargs.setdefault("device_map", self._config.device_map)
 
@@ -89,7 +97,10 @@ class RexOmniDetector(DetectionModel):
             )
             self._loaded = True
         except Exception as e:
-            raise ModelLoadError(f"Failed to load Rex-Omni model: {e}") from e
+            raise ModelLoadError(
+                "Failed to load Rex-Omni model "
+                f"(backend={self._config.backend}, model_path={self._config.model_path!r}): {e}"
+            ) from e
 
     def detect(
         self,
@@ -121,8 +132,14 @@ class RexOmniDetector(DetectionModel):
                 )
 
             results = self._rex.inference(images=pil_image, task="detection", categories=categories)
-            if not results or not results[0].get("success", False):
-                raise DetectionError("Rex-Omni inference failed.")
+            if not results:
+                raise DetectionError(
+                    "Rex-Omni inference returned no results. "
+                    "Check model/backend initialization and runtime dependencies."
+                )
+            if not results[0].get("success", False):
+                message = results[0].get("error") or results[0].get("raw_output") or "unknown error"
+                raise DetectionError(f"Rex-Omni inference failed: {message}")
 
             extracted = results[0].get("extracted_predictions") or {}
             boxes: List[BoundingBox] = []
@@ -141,7 +158,10 @@ class RexOmniDetector(DetectionModel):
         except DetectionError:
             raise
         except Exception as e:
-            raise DetectionError(f"Detection failed: {e}") from e
+            raise DetectionError(
+                "Detection failed in Rex-Omni adapter. "
+                f"backend={self._config.backend}, model_path={self._config.model_path!r}, error={e}"
+            ) from e
 
     @property
     def device(self) -> torch.device:

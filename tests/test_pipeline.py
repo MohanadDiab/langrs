@@ -122,6 +122,57 @@ class TestLangRS:
         assert len(pipeline.bounding_boxes) > 0
         assert pipeline.areas is not None
 
+    def test_detect_objects_tiling_mode_never_calls_detector_once(self, pipeline, sample_image):
+        """Test 'never' tiling mode uses a single full-image detection call."""
+        pipeline.load_image(sample_image)
+        pipeline.config.detection.tiling_mode = "never"
+
+        call_count = {"n": 0}
+        original_detect = pipeline.detection_model.detect
+
+        def counting_detect(*args, **kwargs):
+            call_count["n"] += 1
+            return original_detect(*args, **kwargs)
+
+        pipeline.detection_model.detect = counting_detect
+        pipeline.detect_objects("test prompt", window_size=50, overlap=0)
+        assert call_count["n"] == 1
+
+    def test_detect_objects_tiling_mode_always_tiles_image(self, pipeline, sample_image):
+        """Test 'always' tiling mode runs per-tile detections."""
+        pipeline.load_image(sample_image)
+        pipeline.config.detection.tiling_mode = "always"
+
+        call_count = {"n": 0}
+        original_detect = pipeline.detection_model.detect
+
+        def counting_detect(*args, **kwargs):
+            call_count["n"] += 1
+            return original_detect(*args, **kwargs)
+
+        pipeline.detection_model.detect = counting_detect
+        pipeline.detect_objects("test prompt", window_size=50, overlap=0)
+        assert call_count["n"] == 4
+
+    def test_detect_objects_applies_nms_when_enabled(self, pipeline, sample_image, monkeypatch):
+        """Test NMS hook is invoked when enabled."""
+        pipeline.load_image(sample_image)
+        pipeline.config.detection.apply_nms = True
+        pipeline.config.detection.nms_iou_threshold = 0.42
+
+        called = {"n": 0, "iou": None}
+
+        def fake_apply_nms(boxes, iou_threshold=0.5):
+            called["n"] += 1
+            called["iou"] = iou_threshold
+            return np.array(boxes, dtype=np.float32)
+
+        monkeypatch.setattr("langrs.core.pipeline.apply_nms", fake_apply_nms)
+        pipeline.detect_objects("test prompt", window_size=100, overlap=0)
+
+        assert called["n"] == 1
+        assert called["iou"] == 0.42
+
     def test_filter_outliers_without_boxes(self, pipeline):
         """Test filter_outliers raises error if no boxes."""
         with pytest.raises(ValueError, match="No bounding boxes"):

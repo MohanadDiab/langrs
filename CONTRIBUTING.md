@@ -238,6 +238,31 @@ When adding features:
 
 ---
 
+## Rex-Omni Integration Notes
+
+LangRS maintains a direct Rex-Omni implementation under `langrs/rex_omni/` and an adapter in `langrs/models/detection/rex_omni.py`.
+
+When contributing Rex-related changes:
+
+1. Keep the vendored Rex core components aligned with LangRS integration needs:
+   - `wrapper.py`
+   - `parser.py`
+   - `tasks.py`
+   - `utils.py`
+2. Preserve adapter boundaries:
+   - Rex wrapper/parsing logic stays in `langrs/rex_omni/`
+   - LangRS-specific behavior (tiling, NMS, pipeline integration) stays in core/model adapter layers
+3. Add or update tests in `tests/test_rex_omni_detector.py` for:
+   - prompt/category handling
+   - wrapper init/default propagation
+   - failure diagnostics and error surfaces
+4. Validate pipeline behavior where applicable:
+   - tiling mode interactions
+   - NMS toggle path
+   - end-to-end continuity with segmentation steps
+
+---
+
 ## Questions?
 
 - Open an issue for questions

@@ -45,7 +45,7 @@ LangRS is a Python package for remote sensing image segmentation that combines a
 
 ### PyPI installs
 
-LangRS vendors the Rex-Omni Python wrapper under `langrs/rex_omni/`. Optional heavy GPU dependencies (for example **flash-attn** and/or **vLLM**) may still be required depending on your environment and chosen backend. For that reason:
+LangRS includes a direct Rex-Omni implementation under `langrs/rex_omni/` (wrapper, parser, tasks, and visualization helpers). For standard LangRS detection workflows, you do not need to clone the upstream `Rex-Omni` repository separately. Optional heavy GPU dependencies (for example **flash-attn** and/or **vLLM**) may still be required depending on your environment and chosen backend. For that reason:
 
 - **`pip install langrs`** — core runtime.
 - **`pip install "langrs[rex-omni]"`** — optional heavy GPU extras for the default **Rex-Omni** detection path (e.g. flash-attn / vLLM).
@@ -53,7 +53,7 @@ LangRS vendors the Rex-Omni Python wrapper under `langrs/rex_omni/`. Optional he
 
 **Licensing / notices:** see `THIRD_PARTY_NOTICES.md`.
 
-**Migration (previous single `requirements.txt`):** Grounding DINO is no longer in the default dependency set. To keep the old detector, use `pip install "langrs[dino]"` and pass `detection_model="grounding_dino"` when constructing `LangRS` (see below once the default is switched in a following release).
+**Migration (previous single `requirements.txt`):** Grounding DINO is no longer in the default dependency set. To keep the old detector, use `pip install "langrs[dino]"` and pass `detection_model="grounding_dino"` when constructing `LangRS`.
 
 ### Install from source (development)
 
@@ -67,6 +67,10 @@ pip install -e ".[rex-omni]"
 Optional files: `requirements-core.txt` (runtime core), `requirements-dino.txt` (DINO-only pins), `requirements-dev.txt` (pytest).
 
 ## Usage
+
+### Rex-Omni Prompt Format
+
+When using the default `detection_model="rex_omni"`, pass `text_prompt` as a comma-separated category list (for example `"building, road, solar panel"`). This aligns with Rex-Omni's category-driven detection prompt path.
 
 ### Quick Start
 
@@ -159,11 +163,31 @@ masks = langrs.run_full_pipeline("path_to_your_tif_file", "roof")
 - `config`: Optional LangRSConfig object
 
 #### `detect_objects()`:
-- `text_prompt`: Text description of objects to detect
+- `text_prompt`: Text description of objects to detect. For `rex_omni`, prefer comma-separated categories (for example `"building, road"`).
 - `window_size` (int): Size of each chunk for processing. Default is `500`.
 - `overlap` (int): Overlap size between chunks. Default is `200`.
 - `box_threshold` (float): Confidence threshold for box detection. Default is `0.5`.
 - `text_threshold` (float): Confidence threshold for text detection. Default is `0.5`.
+
+### Advanced: Custom Rex-Omni Initialization
+
+If you need backend-specific configuration (for example forcing CPU placement or using a non-default backend), initialize a custom detector and inject it into `LangRS`:
+
+```python
+from langrs import LangRS
+from langrs.models.detection.rex_omni import RexOmniDetector
+
+detection_model = RexOmniDetector(
+    model_path="IDEA-Research/Rex-Omni",
+    backend="transformers",  # or "vllm" when environment supports it
+    device="cpu",
+)
+
+langrs = LangRS(
+    output_path="output",
+    _detection_model_instance=detection_model,
+)
+```
 
 #### `filter_outliers()`:
 - `method` (optional): Specific method to apply. If None, applies all methods.

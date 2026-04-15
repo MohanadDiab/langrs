@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Rex-Omni Direct Integration**: Vendored Rex-Omni runtime components under `langrs/rex_omni/` and integrated via `RexOmniDetector` as a first-class LangRS detection backend.
+- **Rex adapter diagnostics and tests**: Improved error messages for model load/inference failures and expanded Rex detector test coverage for initialization defaults, error surfaces, and runtime edge cases.
+
 ### Changed
 - **Packaging (Phase 1)**: Split dependencies into `requirements-core.txt`, `requirements-dino.txt`, and `requirements-dev.txt`; `requirements.txt` aggregates core + dev for local work.
 - **`setup.py`**: `install_requires` reads the core file; **extras** `rex-omni` (optional heavy GPU deps such as flash-attn / vLLM) and `dino` (Grounding DINO). Removed monolithic `requirements.txt` as the single source for `install_requires`.
