@@ -36,7 +36,7 @@ def test_transformers_wrapper_requires_cuda(monkeypatch):
         RexOmniWrapper(model_path="dummy", backend="transformers")
 
 
-def test_transformers_wrapper_falls_back_to_sdpa_when_flash_attn_missing(monkeypatch):
+def test_transformers_wrapper_falls_back_to_eager_when_flash_attn_missing(monkeypatch):
     from langrs.rex_omni.wrapper import RexOmniWrapper
 
     calls = []
@@ -57,4 +57,4 @@ def test_transformers_wrapper_falls_back_to_sdpa_when_flash_attn_missing(monkeyp
     assert wrapper.model_type == "transformers"
     assert len(calls) == 2
     assert calls[0]["attn_implementation"] == "flash_attention_2"
-    assert calls[1]["attn_implementation"] == "sdpa"
+    assert calls[1]["attn_implementation"] == "eager"

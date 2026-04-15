@@ -189,19 +189,20 @@ class RexOmniWrapper:
                 )
             except ImportError as e:
                 # Keep CUDA as a hard requirement, but do not force flash-attn as a
-                # hard dependency. If flash-attn is unavailable, retry with SDPA.
+                # hard dependency. If flash-attn is unavailable, retry with eager
+                # attention for better compatibility on newer GPU stacks.
                 if (
                     attn_implementation == "flash_attention_2"
                     and "FlashAttention2" in str(e)
                 ):
                     logger.warning(
                         "flash_attention_2 is unavailable; retrying Rex-Omni "
-                        "transformers load with attn_implementation='sdpa'."
+                        "transformers load with attn_implementation='eager'."
                     )
                     self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
                         self.model_path,
                         torch_dtype=torch_dtype,
-                        attn_implementation="sdpa",
+                        attn_implementation="eager",
                         device_map=device_map,
                         trust_remote_code=trust_remote_code,
                         **extra_model_kwargs,
